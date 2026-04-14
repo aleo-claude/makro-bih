@@ -519,15 +519,20 @@ input[type="text"] { width: 200px; }
       Fiskalni promet
       <span class="nav-badge">LIVE</span>
     </div>
-    <div class="nav-item disabled" onclick="navTo('maloprodaja', this)">
+    <div class="nav-item" onclick="navTo('maloprodaja', this)" data-page="maloprodaja">
       <span class="nav-icon">🛒</span>
       Maloprodajni indeks
-      <span class="nav-badge soon">USKORO</span>
+      <span class="nav-badge">BHAS</span>
     </div>
-    <div class="nav-item disabled">
+    <div class="nav-item" onclick="navTo('turizam', this)" data-page="turizam">
       <span class="nav-icon">🏨</span>
       Turizam i noćenja
-      <span class="nav-badge soon">USKORO</span>
+      <span class="nav-badge">BHAS</span>
+    </div>
+    <div class="nav-item" onclick="navTo('industrija', this)" data-page="industrija">
+      <span class="nav-icon">🏭</span>
+      Industrijska proizvodnja
+      <span class="nav-badge">BHAS</span>
     </div>
   </div>
 
@@ -835,6 +840,88 @@ input[type="text"] { width: 200px; }
       <p>Podaci o promjenama maloprodajnog prometa u FBiH bit će dostupni uskoro.</p>
       <span class="ph-badge">U pripremi</span>
     </div>
+  </div>
+
+
+  <!-- ══ SEKCIJA: MALOPRODAJA ═══════════════════════════════ -->
+  <div id="page-maloprodaja" class="section-page">
+    <div class="page-header">
+      <h2>Maloprodajni indeks BiH</h2>
+      <p>Indeksi prometa trgovine na malo · Izvor: BHAS STS_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="malo-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Promet trgovine na malo — indeks</h3></div>
+        <p>Vrijednosni indeks · odabrani indikatori</p>
+        <div class="chart-wrap tall"><canvas id="chartMalo"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY stopa rasta</h3></div>
+        <p>Godišnja promjena (%)</p>
+        <div class="chart-wrap"><canvas id="chartMaloYoY"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Struktura prometa</h3></div>
+        <p>Udio po vrstama trgovine · zadnji period</p>
+        <div class="chart-wrap"><canvas id="chartMaloPie"></canvas></div>
+      </div>
+    </div>
+    <div id="malo-status" class="note">Učitavam podatke...</div>
+  </div>
+
+  <!-- ══ SEKCIJA: TURIZAM ════════════════════════════════════ -->
+  <div id="page-turizam" class="section-page">
+    <div class="page-header">
+      <h2>Turizam i noćenja BiH</h2>
+      <p>Dolasci turista i noćenja · Izvor: BHAS TUR_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="tur-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Dolasci turista i noćenja</h3></div>
+        <p>Ukupno BiH · godišnji podaci</p>
+        <div class="chart-wrap tall"><canvas id="chartTur"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Domaći vs strani turisti</h3></div>
+        <p>Udio u ukupnim dolascima</p>
+        <div class="chart-wrap"><canvas id="chartTurPie"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Sezonalnost — noćenja po mjesecima</h3></div>
+        <p>Prosječna noćenja po mjesecu (zadnje 3 godine)</p>
+        <div class="chart-wrap"><canvas id="chartTurSeason"></canvas></div>
+      </div>
+    </div>
+    <div id="tur-status" class="note">Učitavam podatke...</div>
+  </div>
+
+  <!-- ══ SEKCIJA: INDUSTRIJA ════════════════════════════════ -->
+  <div id="page-industrija" class="section-page">
+    <div class="page-header">
+      <h2>Industrijska proizvodnja BiH</h2>
+      <p>Indeks industrijske proizvodnje · Izvor: BHAS IND_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="ind-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Indeks industrijske proizvodnje</h3></div>
+        <p>Ukupna industrija i sektori</p>
+        <div class="chart-wrap tall"><canvas id="chartInd"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY stopa rasta</h3></div>
+        <p>Godišnja promjena (%)</p>
+        <div class="chart-wrap"><canvas id="chartIndYoY"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Struktura po sektorima</h3></div>
+        <p>Zadnji dostupni period</p>
+        <div class="chart-wrap"><canvas id="chartIndPie"></canvas></div>
+      </div>
+    </div>
+    <div id="ind-status" class="note">Učitavam podatke...</div>
   </div>
 
 </div><!-- /main -->
@@ -1816,6 +1903,399 @@ document.addEventListener('mouseout', e => {
   if (td) hideGradTooltip();
 });
 
+
+
+
+// ═══════════════════════ BHAS DATA RENDERER ═══════════════════════
+// DATA_BASE je definiran u LIVE DATA LOADER sekciji gore = './data/'
+
+const MONTH_NAMES = ['','Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
+
+function periodToLabel(p) {
+  // Konvertira "2024-01" → "Sij 24", "2024" → "2024", "2024Q1" → "Q1 24"
+  if (!p) return p;
+  const s = String(p).trim();
+  if (/^\d{4}-\d{2}$/.test(s)) {
+    const [y, m] = s.split('-');
+    return MONTH_NAMES[parseInt(m)] + " '" + y.slice(2);
+  }
+  if (/^\d{4}[Qq]\d$/.test(s)) {
+    return s.replace(/(\d{4})([Qq])(\d)/, "Q$3 '$1").replace(/\d{4}/, y => y.slice(2));
+  }
+  return s;
+}
+
+function getRecentPeriods(seriesObj, n=60) {
+  // Uzmi zadnjih N perioda iz objekta {period: value}
+  const sorted = Object.keys(seriesObj).sort();
+  return sorted.slice(-n);
+}
+
+function calcYoY(seriesObj, periods) {
+  // Izračunaj YoY za svaki period
+  return periods.map(p => {
+    const yr = p.slice(0,4), rest = p.slice(4);
+    const prevP = (parseInt(yr)-1) + rest;
+    const curr = seriesObj[p], prev = seriesObj[prevP];
+    return (curr && prev && prev !== 0) ? +((curr/prev - 1)*100).toFixed(2) : null;
+  });
+}
+
+function makeKPI(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map(item => `
+    <div class="kpi-card">
+      <div class="kpi-label">${item.label}</div>
+      <div class="kpi-value">${item.value}</div>
+      <div class="kpi-change ${item.changeClass || 'neu'}">${item.change || ''}</div>
+    </div>
+  `).join('');
+}
+
+function fmtNum(n, decimals=1) {
+  if (n == null) return '—';
+  return n.toLocaleString('bs-BA', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+}
+
+// ── MALOPRODAJA ────────────────────────────────────────────────
+let maloInited = false;
+
+async function initMaloprodaja() {
+  if (maloInited) return;
+  maloInited = true;
+
+  const statusEl = document.getElementById('malo-status');
+
+  try {
+    const r = await fetch(DATA_BASE + 'maloprodaja.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (data.error || !data.sheets) {
+      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
+      return;
+    }
+
+    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    // Uzmi RTI value sheet
+    const sheet = data.sheets['RTI value'] || Object.values(data.sheets)[0];
+    if (!sheet) return;
+
+    // Pronađi ukupnu/total seriju
+    const seriesKeys = Object.keys(sheet);
+    const totalKey = seriesKeys.find(k => k.toLowerCase().includes('total') || k.toLowerCase().includes('ukupno') || k === seriesKeys[0]);
+    const totalSeries = sheet[totalKey];
+
+    // Zadnjih 60 perioda
+    const periods = getRecentPeriods(totalSeries, 60);
+    const values = periods.map(p => totalSeries[p]);
+    const yoys = calcYoY(totalSeries, periods);
+    const labels = periods.map(periodToLabel);
+
+    // KPI
+    const lastVal = values[values.length-1];
+    const lastYoY = yoys[yoys.length-1];
+    const avgYoY = yoys.filter(v => v != null).slice(-12).reduce((a,b) => a+b, 0) / 12;
+
+    makeKPI('malo-kpi', [
+      { label: 'Zadnji indeks', value: fmtNum(lastVal), change: periodToLabel(periods[periods.length-1]), changeClass: 'neu' },
+      { label: 'YoY zadnji', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
+        change: lastYoY > 0 ? 'Rast' : 'Pad', changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Prosjek YoY 12M', value: (avgYoY > 0 ? '+' : '') + fmtNum(avgYoY) + '%', changeClass: avgYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Perioda', value: periods.length, change: periods[0] + ' — ' + periods[periods.length-1], changeClass: 'neu' },
+    ]);
+
+    // Glavni chart — line
+    new Chart(document.getElementById('chartMalo'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: totalKey,
+          data: values,
+          borderColor: '#1a56db',
+          backgroundColor: 'rgba(26,86,219,0.06)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 1,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, legend: { display: false } },
+        scales: { ...chartDefaults.scales,
+          x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } }
+        }
+      }
+    });
+
+    // YoY chart
+    new Chart(document.getElementById('chartMaloYoY'), {
+      type: 'bar',
+      data: {
+        labels: labels.slice(-36),
+        datasets: [{
+          label: 'YoY %',
+          data: yoys.slice(-36),
+          backgroundColor: yoys.slice(-36).map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)'),
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, legend: { display: false } },
+        scales: { ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } }
+        }
+      }
+    });
+
+    // Pie — top 5 serija po zadnjoj vrijednosti
+    const top5 = seriesKeys.slice(0, 6).filter(k => k !== totalKey).slice(0, 5);
+    const lastPeriod = periods[periods.length - 1];
+    new Chart(document.getElementById('chartMaloPie'), {
+      type: 'doughnut',
+      data: {
+        labels: top5.map(k => k.length > 30 ? k.slice(0, 28) + '…' : k),
+        datasets: [{
+          data: top5.map(k => sheet[k]?.[lastPeriod] || 0),
+          backgroundColor: ['#1a56db','#0891b2','#15803d','#b45309','#7c3aed'],
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { position: 'right', labels: { color: '#374151', font: { family: "'Source Sans 3'", size: 11 }, boxWidth: 12 } }
+        }
+      }
+    });
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Greška pri učitavanju: ' + e.message;
+    console.error('Maloprodaja error:', e);
+  }
+}
+
+// ── TURIZAM ────────────────────────────────────────────────────
+let turInited = false;
+
+async function initTurizam() {
+  if (turInited) return;
+  turInited = true;
+
+  const statusEl = document.getElementById('tur-status');
+
+  try {
+    const r = await fetch(DATA_BASE + 'turizam.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (data.error || !data.sheets) {
+      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
+      return;
+    }
+
+    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    const sheet = data.sheets['TUR 01'] || Object.values(data.sheets)[0];
+    if (!sheet) return;
+
+    const seriesKeys = Object.keys(sheet);
+
+    // Pronađi ključne serije
+    const arrivals = seriesKeys.find(k => k.toLowerCase().includes('arriv') || k.toLowerCase().includes('dolaz') || k === seriesKeys[0]);
+    const nights = seriesKeys.find(k => k.toLowerCase().includes('night') || k.toLowerCase().includes('noć') || k === seriesKeys[1]);
+    const domestic = seriesKeys.find(k => k.toLowerCase().includes('domest') || k.toLowerCase().includes('domać'));
+    const foreign = seriesKeys.find(k => k.toLowerCase().includes('foreign') || k.toLowerCase().includes('strani'));
+
+    const mainSeries = sheet[arrivals] || {};
+    const periods = getRecentPeriods(mainSeries, 72);
+    const labels = periods.map(periodToLabel);
+
+    const lastP = periods[periods.length-1];
+    const lastArrivals = mainSeries[lastP];
+    const lastNights = nights ? sheet[nights]?.[lastP] : null;
+    const arrYoY = calcYoY(mainSeries, periods);
+    const lastYoY = arrYoY[arrYoY.length-1];
+
+    makeKPI('tur-kpi', [
+      { label: 'Dolasci zadnji', value: lastArrivals ? fmtNum(lastArrivals/1000, 0) + 'K' : '—',
+        change: periodToLabel(lastP), changeClass: 'neu' },
+      { label: 'Noćenja zadnji', value: lastNights ? fmtNum(lastNights/1000, 0) + 'K' : '—', changeClass: 'neu' },
+      { label: 'YoY dolasci', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
+        changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Perioda podataka', value: periods.length, change: periods[0] + ' — ' + lastP, changeClass: 'neu' },
+    ]);
+
+    // Glavni chart
+    const datasets = [
+      { label: arrivals || 'Dolasci', data: periods.map(p => mainSeries[p]), borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }
+    ];
+    if (nights && sheet[nights]) {
+      datasets.push({ label: nights, data: periods.map(p => sheet[nights][p]), borderColor: '#0891b2', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 1 });
+    }
+
+    new Chart(document.getElementById('chartTur'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        ...chartDefaults,
+        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } } }
+      }
+    });
+
+    // Pie — domaći vs strani
+    if (domestic && foreign) {
+      new Chart(document.getElementById('chartTurPie'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Domaći', 'Strani'],
+          datasets: [{ data: [sheet[domestic]?.[lastP] || 0, sheet[foreign]?.[lastP] || 0], backgroundColor: ['#1a56db', '#0891b2'] }]
+        },
+        options: { plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 12 } } } } }
+      });
+    }
+
+    // Sezonalnost — prosječna noćenja po mjesecu
+    const monthData = Array(12).fill(0).map(() => ({ sum: 0, count: 0 }));
+    if (nights) {
+      Object.entries(sheet[nights] || {}).forEach(([p, v]) => {
+        if (/^\d{4}-\d{2}$/.test(p) && v) {
+          const m = parseInt(p.slice(5)) - 1;
+          monthData[m].sum += v;
+          monthData[m].count++;
+        }
+      });
+    }
+    const monthAvg = monthData.map(d => d.count ? +(d.sum/d.count).toFixed(0) : null);
+
+    new Chart(document.getElementById('chartTurSeason'), {
+      type: 'bar',
+      data: {
+        labels: MONTH_NAMES.slice(1),
+        datasets: [{ label: 'Prosj. noćenja', data: monthAvg, backgroundColor: '#0891b2', borderRadius: 4 }]
+      },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+    });
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Greška: ' + e.message;
+    console.error('Turizam error:', e);
+  }
+}
+
+// ── INDUSTRIJA ─────────────────────────────────────────────────
+let indInited = false;
+
+async function initIndustrija() {
+  if (indInited) return;
+  indInited = true;
+
+  const statusEl = document.getElementById('ind-status');
+
+  try {
+    const r = await fetch(DATA_BASE + 'industrija.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (data.error || !data.sheets) {
+      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
+      return;
+    }
+
+    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    const sheet = data.sheets['BIH IPI'] || Object.values(data.sheets)[0];
+    if (!sheet) return;
+
+    const seriesKeys = Object.keys(sheet);
+    const totalKey = seriesKeys.find(k => k === 'C' || k.toLowerCase().includes('total') || k === seriesKeys[0]);
+    const totalSeries = sheet[totalKey];
+
+    const periods = getRecentPeriods(totalSeries, 60);
+    const values = periods.map(p => totalSeries[p]);
+    const yoys = calcYoY(totalSeries, periods);
+    const labels = periods.map(periodToLabel);
+
+    const lastVal = values[values.length-1];
+    const lastYoY = yoys[yoys.length-1];
+    const avgYoY12 = yoys.filter(v => v != null).slice(-12).reduce((a,b) => a+b, 0) / 12;
+
+    makeKPI('ind-kpi', [
+      { label: 'Zadnji indeks', value: fmtNum(lastVal), change: periodToLabel(periods[periods.length-1]), changeClass: 'neu' },
+      { label: 'YoY zadnji', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
+        changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Prosjek YoY 12M', value: (avgYoY12 > 0 ? '+' : '') + fmtNum(avgYoY12) + '%', changeClass: avgYoY12 > 0 ? 'pos' : 'neg' },
+      { label: 'Serija podataka', value: seriesKeys.length + ' sektora', changeClass: 'neu' },
+    ]);
+
+    // Glavni chart
+    const colors = ['#1a56db','#0891b2','#15803d','#b45309','#7c3aed'];
+    const topSeries = seriesKeys.slice(0, 5);
+
+    new Chart(document.getElementById('chartInd'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: topSeries.map((k, i) => ({
+          label: k,
+          data: periods.map(p => sheet[k]?.[p] ?? null),
+          borderColor: colors[i],
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          borderWidth: i === 0 ? 2.5 : 1.5,
+          pointRadius: 0,
+        }))
+      },
+      options: {
+        ...chartDefaults,
+        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } } }
+      }
+    });
+
+    // YoY
+    new Chart(document.getElementById('chartIndYoY'), {
+      type: 'bar',
+      data: {
+        labels: labels.slice(-36),
+        datasets: [{ label: 'YoY %', data: yoys.slice(-36), backgroundColor: yoys.slice(-36).map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)'), borderRadius: 3 }]
+      },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } } }
+      }
+    });
+
+    // Pie — zadnji period po sektoru
+    const lastP = periods[periods.length-1];
+    const top5 = seriesKeys.filter(k => k !== totalKey).slice(0, 5);
+    new Chart(document.getElementById('chartIndPie'), {
+      type: 'doughnut',
+      data: {
+        labels: top5.map(k => k.length > 25 ? k.slice(0,23)+'…' : k),
+        datasets: [{ data: top5.map(k => Math.abs(sheet[k]?.[lastP] || 0)), backgroundColor: colors }]
+      },
+      options: { plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 11 } } } } }
+    });
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Greška: ' + e.message;
+    console.error('Industrija error:', e);
+  }
+}
+
+// ── NADOGRADI navTo DA INICIJALIZIRA BHAS SEKCIJE ──────────────
+const _origNavTo = navTo;
+function navTo(pageId, el) {
+  _origNavTo(pageId, el);
+  if (pageId === 'maloprodaja') initMaloprodaja();
+  else if (pageId === 'turizam') initTurizam();
+  else if (pageId === 'industrija') initIndustrija();
+}
 
 </script>
 </body>
