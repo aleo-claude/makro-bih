@@ -1,0 +1,8 @@
+{
+  "source": "BHAS",
+  "name": "Bruto domaći proizvod (BDP)",
+  "url": "https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_01.xlsx",
+  "error": "File is not a zip file",
+  "updated": "2026-04-14",
+  "sheets": {}
+}
