@@ -1,17 +1,17 @@
 {
-  "last_run": "2026-04-21T11:45:11.767177",
-  "updated": "2026-04-21",
+  "last_run": "2026-04-22T11:43:17.918383",
+  "updated": "2026-04-22",
   "datasets": {
     "maloprodaja": {
       "name": "Indeksi prometa trgovine na malo",
-      "updated": "2026-04-21",
+      "updated": "2026-04-22",
       "has_data": true,
       "has_error": false,
       "size_kb": 320
     },
     "turizam": {
       "name": "Turizam — dolasci i noćenja",
-      "updated": "2026-04-21",
+      "updated": "2026-04-22",
       "has_data": true,
       "has_error": false,
       "size_kb": 373
@@ -25,7 +25,7 @@
     },
     "industrija": {
       "name": "Indeks industrijske proizvodnje",
-      "updated": "2026-04-21",
+      "updated": "2026-04-22",
       "has_data": true,
       "has_error": false,
       "size_kb": 329
