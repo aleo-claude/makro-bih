@@ -761,6 +761,7 @@ input[type="text"] { width: 200px; }
             <option value="2025">2025</option>
             <option value="2026">2026</option>
           </select>
+          <input type="text" id="yoy-search" placeholder="Općina..." oninput="renderYoYTable()" style="width:150px">
         </div>
       </div>
       <div class="table-wrap">
@@ -945,6 +946,11 @@ function navTo(pageId, el) {
 
   // Topbar
   document.getElementById('topbar-title').textContent = PAGE_TITLES[pageId] || pageId;
+
+  // Inicijaliziraj BHAS sekcije po potrebi
+  if (pageId === 'maloprodaja') initMaloprodaja();
+  else if (pageId === 'turizam') initTurizam();
+  else if (pageId === 'industrija') initIndustrija();
 }
 
 // Sub-tab switching unutar fiskalni sekcije
@@ -1907,7 +1913,8 @@ document.addEventListener('mouseout', e => {
 
 
 // ═══════════════════════ BHAS DATA RENDERER ═══════════════════════
-// DATA_BASE je definiran u LIVE DATA LOADER sekciji gore = './data/'
+// index.html je u docs/docs/ a data/ je u korijenu -> ../../data/
+const DATA_BASE = '../../data/';
 
 const MONTH_NAMES = ['','Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
 
@@ -2288,14 +2295,7 @@ async function initIndustrija() {
   }
 }
 
-// ── NADOGRADI navTo DA INICIJALIZIRA BHAS SEKCIJE ──────────────
-const _origNavTo = navTo;
-function navTo(pageId, el) {
-  _origNavTo(pageId, el);
-  if (pageId === 'maloprodaja') initMaloprodaja();
-  else if (pageId === 'turizam') initTurizam();
-  else if (pageId === 'industrija') initIndustrija();
-}
+// ── BHAS init pozivi - dodano direktno na kraj navTo ──────────
 
 </script>
 </body>
