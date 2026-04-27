@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Makro FBiH — Ekonomski podaci</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sidebar-w: 260px;
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface2: #f0f2f5;
+  --border: #e2e5eb;
+  --accent: #1a56db;
+  --accent-light: rgba(26,86,219,0.08);
+  --text: #111827;
+  --muted: #6b7280;
+  --pos: #15803d;
+  --neg: #b91c1c;
+  --sidebar-bg: #1e2235;
+  --sidebar-text: #c9cdd8;
+  --sidebar-active: #ffffff;
+  --sidebar-hover: rgba(255,255,255,0.07);
+  --sidebar-accent: #4f8ef7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo h1 {
+  font-family: 'Lora', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+.sidebar-logo p {
+  font-size: 11px;
+  color: var(--sidebar-text);
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.3px;
+}
+
+.sidebar-section {
+  padding: 16px 0 8px;
+}
+.sidebar-section-label {
+  padding: 0 16px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--sidebar-text);
+  font-size: 13.5px;
+  font-weight: 400;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  user-select: none;
+}
+.nav-item:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+.nav-item.active {
+  background: rgba(79,142,247,0.15);
+  color: var(--sidebar-active);
+  font-weight: 600;
+  border-left-color: var(--sidebar-accent);
+}
+.nav-item .nav-icon {
+  font-size: 15px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.nav-item .nav-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(79,142,247,0.25);
+  color: var(--sidebar-accent);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+.nav-item .nav-badge.soon {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.25);
+}
+.nav-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── MAIN CONTENT ────────────────────────────────────────── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Topbar */
+#topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 36px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.topbar-breadcrumb strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.topbar-meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Section container */
+.section-page {
+  display: none;
+  padding: 28px 36px 60px;
+  flex: 1;
+}
+.section-page.active {
+  display: block;
+}
+
+/* Section header */
+.page-header {
+  margin-bottom: 28px;
+}
+.page-header h2 {
+  font-family: 'Lora', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.page-header p {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* KPI strip */
+.kpi-strip {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 22px;
+  flex: 1;
+  min-width: 140px;
+}
+.kpi-card .kpi-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.kpi-card .kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  margin-top: 4px;
+  line-height: 1;
+}
+.kpi-card .kpi-change {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 4px;
+}
+.kpi-card .kpi-change.pos { color: var(--pos); }
+.kpi-card .kpi-change.neg { color: var(--neg); }
+.kpi-card .kpi-change.neu { color: var(--muted); }
+
+/* Chart grid */
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.chart-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+.chart-grid.full { grid-template-columns: 1fr; }
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 20px 14px;
+}
+.chart-card.span2 { grid-column: span 2; }
+.chart-card.span3 { grid-column: span 3; }
+
+.chart-card .cc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chart-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.chart-card p {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 14px;
+}
+.chart-wrap { position: relative; height: 220px; }
+.chart-wrap.tall { height: 280px; }
+.chart-wrap.short { height: 160px; }
+
+/* Tab pills za sub-tabs */
+.sub-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 4px;
+  width: fit-content;
+}
+.sub-tab {
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  font-family: 'Source Sans 3', sans-serif;
+}
+.sub-tab.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.sub-tab:hover:not(.active) { color: var(--text); }
+
+/* Table styling */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+thead tr {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+th {
+  padding: 11px 14px;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+th:hover { color: var(--accent); }
+th:first-child, th:nth-child(2) { text-align: left; }
+tbody tr { border-bottom: 1px solid rgba(226,229,235,0.6); transition: background 0.1s; }
+tbody tr:hover { background: rgba(26,86,219,0.03); }
+tbody tr:last-child { border-bottom: none; }
+td {
+  padding: 10px 14px;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+td:first-child { width: 36px; color: var(--muted); font-size: 11px; }
+td:nth-child(2) {
+  text-align: left;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.badge.pos { background: rgba(21,128,61,0.08); color: var(--pos); }
+.badge.neg { background: rgba(185,28,28,0.08); color: var(--neg); }
+.badge.neu { background: rgba(107,114,128,0.1); color: var(--muted); }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ctrl-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
+select, input[type="text"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+select:focus, input[type="text"]:focus { border-color: var(--accent); }
+input[type="text"] { width: 200px; }
+
+/* Chip group */
+.chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface);
+  color: var(--muted);
+}
+.chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.chip:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+.page-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Note */
+.note {
+  margin-top: 14px; font-size: 11px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; padding: 10px 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; border-left: 3px solid var(--accent);
+}
+
+/* Section header inline */
+.section-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 12px;
+}
+.section-title {
+  font-size: 15px; font-weight: 600;
+  font-family: 'Lora', serif;
+}
+.section-title span {
+  color: var(--muted); font-size: 12px;
+  font-weight: 400; font-family: 'JetBrains Mono', monospace; margin-left: 8px;
+}
+
+/* Summary row */
+.summary-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+.summary-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 130px;
+}
+.summary-card .sc-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+}
+.summary-card .sc-value {
+  font-size: 20px; font-weight: 700; margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace; color: var(--accent);
+}
+.summary-card .sc-change { font-size: 12px; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+/* Placeholder za buduće sekcije */
+.placeholder-page {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 50vh; gap: 16px; text-align: center;
+}
+.placeholder-page .ph-icon { font-size: 56px; opacity: 0.3; }
+.placeholder-page h3 { font-family: 'Lora', serif; font-size: 20px; color: var(--text); }
+.placeholder-page p { font-size: 14px; color: var(--muted); max-width: 360px; }
+.placeholder-page .ph-badge {
+  display: inline-block; padding: 4px 12px; border-radius: 20px;
+  background: var(--accent-light); color: var(--accent);
+  font-size: 11px; font-family: 'JetBrains Mono', monospace;
+}
+
+/* Hover tooltip */
+#grad-tooltip {
+  display: none; position: fixed; z-index: 9999;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  padding: 14px 16px 10px; pointer-events: none; width: 300px;
+}
+#grad-tooltip .tt-title {
+  font-family: 'Lora', serif; font-size: 13px; font-weight: 600;
+  color: #111827; margin-bottom: 2px;
+}
+#grad-tooltip .tt-sub {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: #6b7280; margin-bottom: 10px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  #sidebar { width: 100%; min-height: auto; position: relative; }
+  #main { margin-left: 0; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-card.span2, .chart-card.span3 { grid-column: span 1; }
+  .section-page { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>Makro FBiH</h1>
+    <p>Ekonomski pokazatelji · 2020–2026</p>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Potrošnja</div>
+    <div class="nav-item active" onclick="navTo('fiskalni', this)">
+      <span class="nav-icon">🧾</span>
+      Fiskalni promet
+      <span class="nav-badge">LIVE</span>
+    </div>
+    <div class="nav-item" onclick="navTo('maloprodaja', this)" data-page="maloprodaja">
+      <span class="nav-icon">🛒</span>
+      Maloprodajni indeks
+      <span class="nav-badge">BHAS</span>
+    </div>
+    <div class="nav-item" onclick="navTo('turizam', this)" data-page="turizam">
+      <span class="nav-icon">🏨</span>
+      Turizam i noćenja
+      <span class="nav-badge">BHAS</span>
+    </div>
+    <div class="nav-item" onclick="navTo('industrija', this)" data-page="industrija">
+      <span class="nav-icon">🏭</span>
+      Industrijska proizvodnja
+      <span class="nav-badge">BHAS</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Tržište rada</div>
+    <div class="nav-item disabled">
+      <span class="nav-icon">👷</span>
+      Zaposleni i nezaposleni
+      <span class="nav-badge soon">USKORO</span>
+    </div>
+    <div class="nav-item disabled">
+      <span class="nav-icon">💰</span>
+      Prosječne plaće
+      <span class="nav-badge soon">USKORO</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Cijene</div>
+    <div class="nav-item disabled">
+      <span class="nav-icon">📈</span>
+      Inflacija (CPI)
+      <span class="nav-badge soon">USKORO</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Vanjska trgovina</div>
+    <div class="nav-item disabled">
+      <span class="nav-icon">🚢</span>
+      Izvoz i uvoz
+      <span class="nav-badge soon">USKORO</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Regije</div>
+    <div class="nav-item disabled">
+      <span class="nav-icon">🗺️</span>
+      Kantoni FBiH
+      <span class="nav-badge soon">USKORO</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    Izvor: FIA FBiH · Ažurirano: II/2026
+  </div>
+</nav>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <div class="topbar-breadcrumb">
+      Makro FBiH
+      <span style="color:var(--border)">›</span>
+      <strong id="topbar-title">Fiskalni promet</strong>
+    </div>
+    <div class="topbar-meta" id="topbar-meta">FBiH · 2020–2026 · 79 općina</div>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="grad-tooltip">
+    <div class="tt-title" id="tt-grad-name">—</div>
+    <div class="tt-sub" id="tt-grad-sub">Promet u M BAM</div>
+    <canvas id="tt-chart" width="268" height="120"></canvas>
+  </div>
+
+  <!-- ══ SEKCIJA: FISKALNI PROMET ══════════════════════════════ -->
+  <div id="page-fiskalni" class="section-page active">
+
+    <div class="page-header">
+      <h2>Fiskalni promet FBiH</h2>
+      <p>Promet fiskalnih uređaja po općinama · Izvor: FIA FBiH · 79 općina · 2020–2026</p>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">2025 Godišnji</div>
+        <div class="kpi-value">75.5 mlrd</div>
+        <div class="kpi-change pos">+10.9% vs 2024</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Trailing 12M</div>
+        <div class="kpi-value" id="trailing-val">—</div>
+        <div class="kpi-change neu" id="trailing-as-of">do II/2026</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">YoY Feb 2026</div>
+        <div class="kpi-value">+7.4%</div>
+        <div class="kpi-change neu">vs prosjek +8.9%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Peak mjesec</div>
+        <div class="kpi-value">7.13 mlrd</div>
+        <div class="kpi-change neu">Pro 2025</div>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="switchSubTab('annual', this)">📊 Godišnji promet</button>
+      <button class="sub-tab" onclick="switchSubTab('monthly', this)">📈 Trailing / YoY</button>
+      <button class="sub-tab" onclick="switchSubTab('gradyoy', this)">🏙️ Gradovi 12M</button>
+    </div>
+
+    <!-- ── SUB-TAB: GODIŠNJI ────────────────────────────────── -->
+    <div id="sub-annual" class="sub-panel">
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="cc-header"><h3>Ukupni godišnji promet FBiH</h3></div>
+          <p>M BAM · 2020–2025</p>
+          <div class="chart-wrap"><canvas id="chartAnnualTotal"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="cc-header"><h3>Stopa rasta FBiH YoY</h3></div>
+          <p>Godišnja stopa rasta ukupnog prometa</p>
+          <div class="chart-wrap"><canvas id="chartAnnualGrowth"></canvas></div>
+        </div>
+        <div class="chart-card span2">
+          <div class="cc-header"><h3>Top 15 općina — Promet 2025</h3></div>
+          <p>Godišnji promet u M BAM · 2021–2025</p>
+          <div class="chart-wrap tall"><canvas id="chartTop15"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="cc-header"><h3>Top 5 — Promet 2025</h3></div>
+          <p>Apsolutni promet u M BAM</p>
+          <div class="chart-wrap short"><canvas id="chartTop5Promet"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="cc-header"><h3>Top 5 — Rast 2024→2025</h3></div>
+          <p>Najveći YoY rast (%) u 2025</p>
+          <div class="chart-wrap short"><canvas id="chartTop5Rast"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Godišnji promet po općinama <span id="annual-count"></span></div>
+        <div class="controls">
+          <span class="ctrl-label">Pretraga:</span>
+          <input type="text" id="annual-search" placeholder="Naziv općine..." oninput="filterAnnual()">
+          <span class="ctrl-label">Sortiraj:</span>
+          <select id="annual-sort" onchange="sortAnnual()">
+            <option value="2025_desc">2025 ↓</option>
+            <option value="2024_desc">2024 ↓</option>
+            <option value="2023_desc">2023 ↓</option>
+            <option value="2022_desc">2022 ↓</option>
+            <option value="rast_desc">Rast 24-25 ↓</option>
+            <option value="rast_asc">Rast 24-25 ↑</option>
+            <option value="name_asc">Naziv A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="annual-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th onclick="sortBy('annual','name')" data-col="name">Općina <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','2020')" data-col="2020">2020 <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','2021')" data-col="2021">2021 <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','rast_20_21')" data-col="rast_20_21">↕ <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','2022')" data-col="2022">2022 <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','rast_21_22')" data-col="rast_21_22">↕ <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','2023')" data-col="2023">2023 <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','rast_22_23')" data-col="rast_22_23">↕ <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','2024')" data-col="2024">2024 <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','rast_23_24')" data-col="rast_23_24">↕ <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','2025')" data-col="2025" class="sort-desc">2025 <span class="sort-icon"></span></th>
+              <th onclick="sortBy('annual','rast_24_25')" data-col="rast_24_25">↕ <span class="sort-icon"></span></th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="annual-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="annual-pagination"></div>
+      <div class="note">⚠️ Podaci za 2020 i 2021 obuhvataju samo rujan–prosinac (YTD iz prosinca = godišnji kumulativ).</div>
+    </div>
+
+    <!-- ── SUB-TAB: TRAILING / YOY ──────────────────────────── -->
+    <div id="sub-monthly" class="sub-panel" style="display:none">
+      <div class="summary-row" id="monthly-summary-row"></div>
+      <div class="chart-grid full">
+        <div class="chart-card">
+          <div class="cc-header">
+            <h3>Trailing 12M promet FBiH</h3>
+            <div class="chip-group" id="trail-metric-chips">
+              <div class="chip active" onclick="setTrailMetric('trailing')">Trailing 12M</div>
+              <div class="chip" onclick="setTrailMetric('monthly')">Mjesečni</div>
+              <div class="chip" onclick="setTrailMetric('both')">Oboje</div>
+            </div>
+          </div>
+          <p>Klizni zbroj zadnjih 12 mj. (mlrd BAM) + YoY stopa rasta (%)</p>
+          <div class="chart-wrap tall"><canvas id="chartTrailing"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="cc-header"><h3>YoY stopa rasta po mjesecu</h3></div>
+          <p>Promet vs isti period prethodne godine (%)</p>
+          <div class="chart-wrap"><canvas id="chartYoY"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="cc-header">
+            <h3>Promet — Top općine</h3>
+            <div class="chip-group" id="grad-chips" style="flex-wrap:wrap;max-width:300px"></div>
+          </div>
+          <p>Odaberi do 5 općina za usporedbu</p>
+          <div class="chart-wrap"><canvas id="chartGradMonthly"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">YoY tabela po periodu</div>
+        <div class="controls">
+          <select id="yoy-year-filter" onchange="renderYoYTable()">
+            <option value="all">Svi periodi</option>
+            <option value="2022">2022</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+          </select>
+          <input type="text" id="yoy-search" placeholder="Općina..." oninput="renderYoYTable()" style="width:150px">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="text-align:left">Period</th>
+            <th>Promet FBiH (BAM)</th>
+            <th>Prethodni period</th>
+            <th>YoY %</th>
+            <th>Trailing 12M</th>
+          </tr></thead>
+          <tbody id="yoy-tbody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:28px">
+        <div class="section-header">
+          <div class="section-title">YoY po općini</div>
+          <div class="controls">
+            <select id="grad-yoy-select" onchange="renderGradYoY()">
+              <option value="">— Odaberi općinu —</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="text-align:left">Period</th>
+              <th>Promet (BAM)</th>
+              <th>Prethodni period</th>
+              <th>YoY %</th>
+            </tr></thead>
+            <tbody id="grad-yoy-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUB-TAB: GRADOVI 12M ─────────────────────────────── -->
+    <div id="sub-gradyoy" class="sub-panel" style="display:none">
+      <div class="chart-grid full">
+        <div class="chart-card">
+          <div class="cc-header"><h3>FBiH Ukupno — Mjesečni YoY Ožu 2025 – Velj 2026</h3></div>
+          <p>Promet vs isti period prethodne godine (%)</p>
+          <div class="chart-wrap"><canvas id="chartGradYoYFBIH"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Promet po općinama — Ožu 2025 – Velj 2026</div>
+        <div class="controls">
+          <input type="text" id="gradyoy-search" placeholder="Općina..." oninput="renderGradYoYTable()">
+          <select id="gradyoy-sort" onchange="renderGradYoYTable()">
+            <option value="latest_desc">Velj 2026 ↓</option>
+            <option value="avg_yoy_desc">Avg YoY ↓</option>
+            <option value="avg_yoy_asc">Avg YoY ↑</option>
+            <option value="name_asc">A–Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap" style="overflow-x:auto">
+        <table id="gradyoy-table" style="min-width:1200px">
+          <thead id="gradyoy-thead"></thead>
+          <tbody id="gradyoy-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="gradyoy-pagination"></div>
+      <div class="note">📊 M BAM = promet u milijunima BAM · 🟢🔴 YoY = vs isti mjesec 2024 · 🔵🟠 MoM = vs prethodni mjesec</div>
+    </div>
+  </div><!-- /page-fiskalni -->
+
+  <!-- ══ PLACEHOLDER SEKCIJE ══════════════════════════════════ -->
+  <div id="page-maloprodaja" class="section-page">
+    <div class="placeholder-page">
+      <div class="ph-icon">🛒</div>
+      <h3>Maloprodajni indeks</h3>
+      <p>Podaci o promjenama maloprodajnog prometa u FBiH bit će dostupni uskoro.</p>
+      <span class="ph-badge">U pripremi</span>
+    </div>
+  </div>
+
+
+  <!-- ══ SEKCIJA: MALOPRODAJA ═══════════════════════════════ -->
+  <div id="page-maloprodaja" class="section-page">
+    <div class="page-header">
+      <h2>Maloprodajni indeks BiH</h2>
+      <p>Indeksi prometa trgovine na malo · Izvor: BHAS STS_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="malo-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Promet trgovine na malo — indeks</h3></div>
+        <p>Vrijednosni indeks · odabrani indikatori</p>
+        <div class="chart-wrap tall"><canvas id="chartMalo"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY stopa rasta</h3></div>
+        <p>Godišnja promjena (%)</p>
+        <div class="chart-wrap"><canvas id="chartMaloYoY"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Struktura prometa</h3></div>
+        <p>Udio po vrstama trgovine · zadnji period</p>
+        <div class="chart-wrap"><canvas id="chartMaloPie"></canvas></div>
+      </div>
+    </div>
+    <div id="malo-status" class="note">Učitavam podatke...</div>
+  </div>
+
+  <!-- ══ SEKCIJA: TURIZAM ════════════════════════════════════ -->
+  <div id="page-turizam" class="section-page">
+    <div class="page-header">
+      <h2>Turizam i noćenja BiH</h2>
+      <p>Dolasci turista i noćenja · Izvor: BHAS TUR_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="tur-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Dolasci turista i noćenja</h3></div>
+        <p>Ukupno BiH · godišnji podaci</p>
+        <div class="chart-wrap tall"><canvas id="chartTur"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Domaći vs strani turisti</h3></div>
+        <p>Udio u ukupnim dolascima</p>
+        <div class="chart-wrap"><canvas id="chartTurPie"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Sezonalnost — noćenja po mjesecima</h3></div>
+        <p>Prosječna noćenja po mjesecu (zadnje 3 godine)</p>
+        <div class="chart-wrap"><canvas id="chartTurSeason"></canvas></div>
+      </div>
+    </div>
+    <div id="tur-status" class="note">Učitavam podatke...</div>
+  </div>
+
+  <!-- ══ SEKCIJA: INDUSTRIJA ════════════════════════════════ -->
+  <div id="page-industrija" class="section-page">
+    <div class="page-header">
+      <h2>Industrijska proizvodnja BiH</h2>
+      <p>Indeks industrijske proizvodnje · Izvor: BHAS IND_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="ind-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Indeks industrijske proizvodnje</h3></div>
+        <p>Ukupna industrija i sektori</p>
+        <div class="chart-wrap tall"><canvas id="chartInd"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY stopa rasta</h3></div>
+        <p>Godišnja promjena (%)</p>
+        <div class="chart-wrap"><canvas id="chartIndYoY"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Struktura po sektorima</h3></div>
+        <p>Zadnji dostupni period</p>
+        <div class="chart-wrap"><canvas id="chartIndPie"></canvas></div>
+      </div>
+    </div>
+    <div id="ind-status" class="note">Učitavam podatke...</div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ── NAVIGACIJA ─────────────────────────────────────────────
+const PAGE_TITLES = {
+  fiskalni: 'Fiskalni promet',
+  maloprodaja: 'Maloprodajni indeks',
+};
+
+function navTo(pageId, el) {
+  // Sidebar active
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  // Page active
+  document.querySelectorAll('.section-page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + pageId);
+  if (page) page.classList.add('active');
+
+  // Topbar
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[pageId] || pageId;
+
+  // Inicijaliziraj BHAS sekcije po potrebi
+  if (pageId === 'maloprodaja') initMaloprodaja();
+  else if (pageId === 'turizam') initTurizam();
+  else if (pageId === 'industrija') initIndustrija();
+}
+
+// Sub-tab switching unutar fiskalni sekcije
+function switchSubTab(name, el) {
+  document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.sub-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('sub-' + name).style.display = 'block';
+
+  // Inicijaliziraj chartove tek kad trebaju
+  if (name === 'annual' && !annualInited) { initAnnualCharts(); annualInited = true; }
+  if (name === 'monthly' && !monthlyInited) {
+    initMonthlySummary(); updateTrailChart(); updateYoYChart();
+    initGradChips(); updateGradChart(); renderYoYTable();
+    initGradYoYSelect(); renderGradYoY(); monthlyInited = true;
+  }
+  if (name === 'gradyoy' && !gradYoYInited) { initGradYoYTab(); }
+}
+
+let annualInited = false;
+let monthlyInited = false;
+</script>
+
+<script>
+
+
+
+// ═══════════════════════ DATA ═══════════════════════
+const DATA = {"annual_rows": [{"grad": "ILIDŽA", "2020": 3023399204.0, "2021": 3560873844.72, "2022": 4065914268.88, "2023": 4590658288.62, "2024": 5695252116.86, "2025": 6107910447.75, "g20202021": 17.78, "g20212022": 14.18, "g20222023": 12.91, "g20232024": 24.06, "g20242025": 7.25}, {"grad": "NOVI GRAD SARAJEVO", "2020": 3394310539.0, "2021": 3993805290.29, "2022": 4609555743.34, "2023": 5200500203.62, "2024": 5351950067.25, "2025": 5913387279.94, "g20202021": 17.66, "g20212022": 15.42, "g20222023": 12.82, "g20232024": 2.91, "g20242025": 10.49}, {"grad": "SARAJEVO CENTAR", "2020": 2260978970.0, "2021": 2680702055.49, "2022": 3213421566.24, "2023": 3582763772.09, "2024": 3882612885.09, "2025": 4412788040.07, "g20202021": 18.56, "g20212022": 19.87, "g20222023": 11.49, "g20232024": 8.37, "g20242025": 13.66}, {"grad": "TUZLA", "2020": 2574131827.0, "2021": 2939462474.71, "2022": 3389907905.59, "2023": 3816717262.59, "2024": 4076326758.86, "2025": 4330813825.51, "g20202021": 14.19, "g20212022": 15.32, "g20222023": 12.59, "g20232024": 6.8, "g20242025": 6.24}, {"grad": "MOSTAR", "2020": 2491593001.0, "2021": 2955308443.05, "2022": 3472096573.86, "2023": 3703992163.77, "2024": 3815929109.82, "2025": 4294081498.8, "g20202021": 18.61, "g20212022": 17.49, "g20222023": 6.68, "g20232024": 3.02, "g20242025": 12.53}, {"grad": "ZENICA", "2020": 1431631013.0, "2021": 1625397328.68, "2022": 2765946706.67, "2023": 2830449817.17, "2024": 2926269599.54, "2025": 3598052744.86, "g20202021": 13.53, "g20212022": 70.17, "g20222023": 2.33, "g20232024": 3.39, "g20242025": 22.96}, {"grad": "TEŠANJ", "2020": 1415470824.0, "2021": 1713980917.47, "2022": 1903118321.04, "2023": 2436547928.18, "2024": 2666923691.79, "2025": 3113412275.89, "g20202021": 21.09, "g20212022": 11.03, "g20222023": 28.03, "g20232024": 9.46, "g20242025": 16.74}, {"grad": "NOVO SARAJEVO", "2020": 1683985625.0, "2021": 1806777266.22, "2022": 2188217985.35, "2023": 2459663334.2, "2024": 2629687092.21, "2025": 2889424839.67, "g20202021": 7.29, "g20212022": 21.11, "g20222023": 12.4, "g20232024": 6.91, "g20242025": 9.88}, {"grad": "ŠIROKI BRIJEG", "2020": 1190540676.0, "2021": 1412272200.99, "2022": 1649368077.19, "2023": 1833194815.94, "2024": 1949904723.27, "2025": 2159109611.25, "g20202021": 18.62, "g20212022": 16.79, "g20222023": 11.15, "g20232024": 6.37, "g20242025": 10.73}, {"grad": "VISOKO", "2020": 1174816089.0, "2021": 1298769571.37, "2022": 1466230398.02, "2023": 1504059989.78, "2024": 1607086625.88, "2025": 1912078432.25, "g20202021": 10.55, "g20212022": 12.89, "g20222023": 2.58, "g20232024": 6.85, "g20242025": 18.98}, {"grad": "LUKAVAC", "2020": 1072030703.0, "2021": 1230883084.45, "2022": 1466331711.41, "2023": 1562077665.23, "2024": 1733152184.59, "2025": 1826574025.81, "g20202021": 14.82, "g20212022": 19.13, "g20222023": 6.53, "g20232024": 10.95, "g20242025": 5.39}, {"grad": "ŽIVINICE", "2020": 1034676500.0, "2021": 1232991943.02, "2022": 1448549465.53, "2023": 1481479086.31, "2024": 1631220990.05, "2025": 1757524959.54, "g20202021": 19.17, "g20212022": 17.48, "g20222023": 2.27, "g20232024": 10.11, "g20242025": 7.74}, {"grad": "HADŽIĆI", "2020": 959832287.0, "2021": 998898626.15, "2022": 1142178314.17, "2023": 1361705176.86, "2024": 1490870006.04, "2025": 1756878547.35, "g20202021": 4.07, "g20212022": 14.34, "g20222023": 19.22, "g20232024": 9.49, "g20242025": 17.84}, {"grad": "BIHAĆ", "2020": 970182134.0, "2021": 1154920980.28, "2022": 1286463163.14, "2023": 1323333636.13, "2024": 1366465101.7, "2025": 1488387921.14, "g20202021": 19.04, "g20212022": 11.39, "g20222023": 2.87, "g20232024": 3.26, "g20242025": 8.92}, {"grad": "GRAČANICA", "2020": 957495410.0, "2021": 1181962140.57, "2022": 1362420663.96, "2023": 1384698415.29, "2024": 1362046883.17, "2025": 1474872199.45, "g20202021": 23.44, "g20212022": 15.27, "g20222023": 1.64, "g20232024": -1.64, "g20242025": 8.28}, {"grad": "GRADAČAC", "2020": 923987134.0, "2021": 1070523009.9, "2022": 1314136736.73, "2023": 1342436482.54, "2024": 1362014046.72, "2025": 1438950834.76, "g20202021": 15.86, "g20212022": 22.76, "g20222023": 2.15, "g20232024": 1.46, "g20242025": 5.65}, {"grad": "VITEZ", "2020": 910752978.0, "2021": 1077499770.97, "2022": 1209566264.03, "2023": 1239791612.13, "2024": 1275924307.0, "2025": 1365040557.99, "g20202021": 18.31, "g20212022": 12.26, "g20222023": 2.5, "g20232024": 2.91, "g20242025": 6.98}, {"grad": "POSUŠJE", "2020": 790173365.0, "2021": 849253185.91, "2022": 1069048615.75, "2023": 1250015384.14, "2024": 1237082725.98, "2025": 1337677628.77, "g20202021": 7.48, "g20212022": 25.88, "g20222023": 16.93, "g20232024": -1.03, "g20242025": 8.13}, {"grad": "VOGOŠĆA", "2020": 630985743.0, "2021": 770112121.28, "2022": 911675709.17, "2023": 1023993916.87, "2024": 1105544711.34, "2025": 1186761660.58, "g20202021": 22.05, "g20212022": 18.38, "g20222023": 12.32, "g20232024": 7.96, "g20242025": 7.35}, {"grad": "CAZIN", "2020": 600780780.0, "2021": 756887779.33, "2022": 882353274.3, "2023": 939201180.87, "2024": 1020143142.55, "2025": 1076112482.58, "g20202021": 25.98, "g20212022": 16.58, "g20222023": 6.44, "g20232024": 8.62, "g20242025": 5.49}, {"grad": "LJUBUŠKI", "2020": 568930191.0, "2021": 637857911.24, "2022": 731019272.72, "2023": 829785483.75, "2024": 911832959.71, "2025": 1065896198.25, "g20202021": 12.12, "g20212022": 14.61, "g20222023": 13.51, "g20232024": 9.89, "g20242025": 16.9}, {"grad": "GRUDE", "2020": 585081085.0, "2021": 677882653.86, "2022": 818355790.81, "2023": 873887339.83, "2024": 942078249.43, "2025": 1000970805.59, "g20202021": 15.86, "g20212022": 20.72, "g20222023": 6.79, "g20232024": 7.8, "g20242025": 6.25}, {"grad": "ČITLUK", "2020": 529723941.0, "2021": 626987277.53, "2022": 775157452.94, "2023": 844676953.09, "2024": 898641772.98, "2025": 989692577.05, "g20202021": 18.36, "g20212022": 23.63, "g20222023": 8.97, "g20232024": 6.39, "g20242025": 10.13}, {"grad": "SARAJEVO STARI GRAD", "2020": 459544604.0, "2021": 586147635.35, "2022": 715031594.34, "2023": 799992672.13, "2024": 888004596.56, "2025": 963811595.05, "g20202021": 27.55, "g20212022": 21.99, "g20222023": 11.88, "g20232024": 11.0, "g20242025": 8.54}, {"grad": "SREBRENIK", "2020": 543517583.0, "2021": 661196528.05, "2022": 833335871.76, "2023": 853668844.19, "2024": 876383404.41, "2025": 944774257.31, "g20202021": 21.65, "g20212022": 26.03, "g20222023": 2.44, "g20232024": 2.66, "g20242025": 7.8}, {"grad": "ORAŠJE", "2020": 381502746.0, "2021": 431299835.95, "2022": 425468086.95, "2023": 429685298.52, "2024": 552530369.64, "2025": 893969365.9, "g20202021": 13.05, "g20212022": -1.35, "g20222023": 0.99, "g20232024": 28.59, "g20242025": 61.8}, {"grad": "KAKANJ", "2020": 577496133.0, "2021": 582182089.56, "2022": 728499742.07, "2023": 759831783.54, "2024": 715756344.43, "2025": 884157549.46, "g20202021": 0.81, "g20212022": 25.13, "g20222023": 4.3, "g20232024": -5.8, "g20242025": 23.53}, {"grad": "TRAVNIK", "2020": 564350515.0, "2021": 645914300.54, "2022": 764772253.07, "2023": 798898047.04, "2024": 798886416.44, "2025": 861497529.6, "g20202021": 14.45, "g20212022": 18.4, "g20222023": 4.46, "g20232024": -0.0, "g20242025": 7.84}, {"grad": "ILIJAŠ", "2020": 511847188.0, "2021": 647659750.17, "2022": 720858760.22, "2023": 758127609.72, "2024": 780804818.34, "2025": 815551042.73, "g20202021": 26.53, "g20212022": 11.3, "g20222023": 5.17, "g20232024": 2.99, "g20242025": 4.45}, {"grad": "KISELJAK", "2020": 470870999.0, "2021": 496560933.53, "2022": 546945161.88, "2023": 587836484.65, "2024": 721573884.08, "2025": 697409930.76, "g20202021": 5.46, "g20212022": 10.15, "g20222023": 7.48, "g20232024": 22.75, "g20242025": -3.35}, {"grad": "VELIKA KLADUŠA", "2020": 379263597.0, "2021": 464567563.37, "2022": 500853551.0, "2023": 532517061.92, "2024": 564866216.2, "2025": 626827295.39, "g20202021": 22.49, "g20212022": 7.81, "g20222023": 6.32, "g20232024": 6.07, "g20242025": 10.97}, {"grad": "ŽEPČE", "2020": 402262106.0, "2021": 483854633.24, "2022": 597969335.41, "2023": 601595803.65, "2024": 600907601.66, "2025": 618450728.21, "g20202021": 20.28, "g20212022": 23.58, "g20222023": 0.61, "g20232024": -0.11, "g20242025": 2.92}, {"grad": "BUGOJNO", "2020": 331037435.0, "2021": 403386626.88, "2022": 481116631.82, "2023": 523047392.63, "2024": 487286004.61, "2025": 593041774.02, "g20202021": 21.86, "g20212022": 19.27, "g20222023": 8.72, "g20232024": -6.84, "g20242025": 21.7}, {"grad": "SANSKI MOST", "2020": 322980349.0, "2021": 404665904.9, "2022": 475188425.9, "2023": 554534538.8, "2024": 556128171.09, "2025": 578728594.2, "g20202021": 25.29, "g20212022": 17.43, "g20222023": 16.7, "g20232024": 0.29, "g20242025": 4.06}, {"grad": "TOMISLAVGRAD", "2020": 317566164.0, "2021": 377880284.65, "2022": 445957805.75, "2023": 478231331.31, "2024": 507053763.58, "2025": 560856569.27, "g20202021": 18.99, "g20212022": 18.02, "g20222023": 7.24, "g20232024": 6.03, "g20242025": 10.61}, {"grad": "ČAPLJINA", "2020": 331537601.0, "2021": 367840411.09, "2022": 451472748.5, "2023": 485463416.28, "2024": 513734525.12, "2025": 560443170.96, "g20202021": 10.95, "g20212022": 22.74, "g20222023": 7.53, "g20232024": 5.82, "g20242025": 9.09}, {"grad": "KALESIJA", "2020": 322224113.0, "2021": 402010695.44, "2022": 470690961.55, "2023": 478896196.25, "2024": 495428301.51, "2025": 525792180.66, "g20202021": 24.76, "g20212022": 17.08, "g20222023": 1.74, "g20232024": 3.45, "g20242025": 6.13}, {"grad": "KONJIC", "2020": 301287464.0, "2021": 391588749.76, "2022": 651245338.77, "2023": 502272412.21, "2024": 508036251.89, "2025": 518661402.1, "g20202021": 29.97, "g20212022": 66.31, "g20222023": -22.88, "g20232024": 1.15, "g20242025": 2.09}, {"grad": "GORAŽDE", "2020": 337043254.0, "2021": 398839730.81, "2022": 450031701.28, "2023": 482684501.13, "2024": 490033874.22, "2025": 505550453.95, "g20202021": 18.33, "g20212022": 12.84, "g20222023": 7.26, "g20232024": 1.52, "g20242025": 3.17}, {"grad": "JAJCE", "2020": 341958734.0, "2021": 470230642.08, "2022": 512183408.31, "2023": 465257053.69, "2024": 475473488.54, "2025": 500623704.39, "g20202021": 37.51, "g20212022": 8.92, "g20222023": -9.16, "g20232024": 2.2, "g20242025": 5.29}, {"grad": "MAGLAJ", "2020": 279133261.0, "2021": 362827881.09, "2022": 359672930.87, "2023": 392839223.52, "2024": 444767142.02, "2025": 471020779.55, "g20202021": 29.98, "g20212022": -0.87, "g20222023": 9.22, "g20232024": 13.22, "g20242025": 5.9}, {"grad": "LIVNO", "2020": 248355404.0, "2021": 293622639.54, "2022": 363767685.7, "2023": 411992205.19, "2024": 417912983.71, "2025": 466441778.72, "g20202021": 18.23, "g20212022": 23.89, "g20222023": 13.26, "g20232024": 1.44, "g20242025": 11.61}, {"grad": "USORA", "2020": 169364265.0, "2021": 226109867.7, "2022": 278135235.83, "2023": 272934569.65, "2024": 323851091.75, "2025": 414778011.56, "g20202021": 33.51, "g20212022": 23.01, "g20222023": -1.87, "g20232024": 18.66, "g20242025": 28.08}, {"grad": "ZAVIDOVIĆI", "2020": 252381360.0, "2021": 306301496.36, "2022": 340238301.95, "2023": 355662384.28, "2024": 395268174.06, "2025": 412220955.33, "g20202021": 21.36, "g20212022": 11.08, "g20222023": 4.53, "g20232024": 11.14, "g20242025": 4.29}, {"grad": "DOBOJ JUG", "2020": 244954359.0, "2021": 302725930.33, "2022": 364365946.75, "2023": 337681685.08, "2024": 358383483.46, "2025": 400577353.73, "g20202021": 23.58, "g20212022": 20.36, "g20222023": -7.32, "g20232024": 6.13, "g20242025": 11.77}, {"grad": "ODŽAK", "2020": 217962523.0, "2021": 267594570.37, "2022": 332296172.24, "2023": 354489602.66, "2024": 381850203.41, "2025": 378278636.83, "g20202021": 22.77, "g20212022": 24.18, "g20222023": 6.68, "g20232024": 7.72, "g20242025": -0.94}, {"grad": "BOSANSKA KRUPA", "2020": 209118661.0, "2021": 283058099.59, "2022": 312054147.35, "2023": 372249369.49, "2024": 340507463.03, "2025": 377756979.28, "g20202021": 35.36, "g20212022": 10.24, "g20222023": 19.29, "g20232024": -8.53, "g20242025": 10.94}, {"grad": "KREŠEVO", "2020": 194102976.0, "2021": 227009022.14, "2022": 286378361.05, "2023": 283359742.24, "2024": 341156193.38, "2025": 365826391.65, "g20202021": 16.95, "g20212022": 26.15, "g20222023": -1.05, "g20232024": 20.4, "g20242025": 7.23}, {"grad": "VAREŠ", "2020": 38935788.0, "2021": 44609906.82, "2022": 67878925.23, "2023": 101328611.58, "2024": 141310117.75, "2025": 350069948.43, "g20202021": 14.57, "g20212022": 52.16, "g20222023": 49.28, "g20232024": 39.46, "g20242025": 147.73}, {"grad": "BANOVIĆI", "2020": 212161808.0, "2021": 230534129.13, "2022": 304940827.13, "2023": 286463651.79, "2024": 308365396.37, "2025": 341170952.08, "g20202021": 8.66, "g20212022": 32.28, "g20222023": -6.06, "g20232024": 7.65, "g20242025": 10.64}, {"grad": "NOVI TRAVNIK", "2020": 195114563.0, "2021": 215120061.04, "2022": 259280557.99, "2023": 321929772.23, "2024": 303426539.17, "2025": 337143167.18, "g20202021": 10.25, "g20212022": 20.53, "g20222023": 24.16, "g20232024": -5.75, "g20242025": 11.11}, {"grad": "BREZA", "2020": 145875990.0, "2021": 176374742.2, "2022": 238330307.11, "2023": 259464172.44, "2024": 276690967.69, "2025": 277490522.09, "g20202021": 20.91, "g20212022": 35.13, "g20222023": 8.87, "g20232024": 6.64, "g20242025": 0.29}, {"grad": "GORNJI VAKUF-USKOPLJE", "2020": 167829179.0, "2021": 189061177.89, "2022": 221273874.89, "2023": 215902558.95, "2024": 248960173.75, "2025": 264795998.48, "g20202021": 12.65, "g20212022": 17.04, "g20222023": -2.43, "g20232024": 15.31, "g20242025": 6.36}, {"grad": "BUSOVAČA", "2020": 172921507.0, "2021": 197981660.14, "2022": 239394700.65, "2023": 231012425.63, "2024": 227583203.91, "2025": 229678970.37, "g20202021": 14.49, "g20212022": 20.92, "g20222023": -3.5, "g20232024": -1.48, "g20242025": 0.92}, {"grad": "DOBOJ ISTOK", "2020": 125034051.0, "2021": 139695502.67, "2022": 169475799.26, "2023": 191361020.18, "2024": 198544447.14, "2025": 216809463.04, "g20202021": 11.73, "g20212022": 21.32, "g20222023": 12.91, "g20232024": 3.75, "g20242025": 9.2}, {"grad": "BUŽIM", "2020": 101034393.0, "2021": 125249524.73, "2022": 158195763.95, "2023": 163675489.3, "2024": 174101253.21, "2025": 192371984.74, "g20202021": 23.97, "g20212022": 26.3, "g20222023": 3.46, "g20232024": 6.37, "g20242025": 10.49}, {"grad": "BOSANSKI PETROVAC", "2020": 119078835.0, "2021": 154760328.93, "2022": 156053248.27, "2023": 155200871.1, "2024": 150445065.06, "2025": 170176481.7, "g20202021": 29.96, "g20212022": 0.84, "g20222023": -0.55, "g20232024": -3.06, "g20242025": 13.12}, {"grad": "DONJI VAKUF", "2020": 138641457.0, "2021": 154848507.83, "2022": 130165938.53, "2023": 125380130.38, "2024": 131164801.96, "2025": 145927843.42, "g20202021": 11.69, "g20212022": -15.94, "g20222023": -3.68, "g20232024": 4.61, "g20242025": 11.26}, {"grad": "KLJUČ", "2020": 82514666.0, "2021": 103181619.99, "2022": 116144679.68, "2023": 121626025.61, "2024": 118759470.19, "2025": 131121881.3, "g20202021": 25.05, "g20212022": 12.56, "g20222023": 4.72, "g20232024": -2.36, "g20242025": 10.41}, {"grad": "STOLAC", "2020": 66979922.0, "2021": 78361549.65, "2022": 92519967.2, "2023": 101472706.64, "2024": 95161247.23, "2025": 130329467.98, "g20202021": 16.99, "g20212022": 18.07, "g20222023": 9.68, "g20232024": -6.22, "g20242025": 36.96}, {"grad": "JABLANICA", "2020": 73391455.0, "2021": 85194314.38, "2022": 112816459.09, "2023": 117794470.24, "2024": 105406763.33, "2025": 124047539.05, "g20202021": 16.08, "g20212022": 32.42, "g20222023": 4.41, "g20232024": -10.52, "g20242025": 17.68}, {"grad": "FOJNICA", "2020": 80251875.0, "2021": 90652627.72, "2022": 117369800.68, "2023": 99702928.82, "2024": 120853521.43, "2025": 123879403.75, "g20202021": 12.96, "g20212022": 29.47, "g20222023": -15.05, "g20232024": 21.21, "g20242025": 2.5}, {"grad": "ČELIĆ", "2020": 66849639.0, "2021": 81507130.14, "2022": 100437688.25, "2023": 107228238.75, "2024": 115156192.11, "2025": 122211578.89, "g20202021": 21.93, "g20212022": 23.23, "g20222023": 6.76, "g20232024": 7.39, "g20242025": 6.13}, {"grad": "NEUM", "2020": 74519080.0, "2021": 93663810.65, "2022": 107453607.66, "2023": 104904789.61, "2024": 112805624.15, "2025": 118649665.5, "g20202021": 25.69, "g20212022": 14.72, "g20222023": -2.37, "g20232024": 7.53, "g20242025": 5.18}, {"grad": "OLOVO", "2020": 96113432.0, "2021": 136884219.59, "2022": 131581605.3, "2023": 141818722.92, "2024": 111572293.5, "2025": 113944888.39, "g20202021": 42.42, "g20212022": -3.87, "g20222023": 7.78, "g20232024": -21.33, "g20242025": 2.13}, {"grad": "KLADANJ", "2020": 79701128.0, "2021": 82707591.03, "2022": 102734535.5, "2023": 99704561.58, "2024": 97584903.09, "2025": 109099515.81, "g20202021": 3.77, "g20212022": 24.21, "g20222023": -2.95, "g20232024": -2.13, "g20242025": 11.8}, {"grad": "DRVAR", "2020": 61877351.0, "2021": 76476216.36, "2022": 89126254.43, "2023": 79665223.89, "2024": 81927756.44, "2025": 86787627.73, "g20202021": 23.59, "g20212022": 16.54, "g20222023": -10.62, "g20232024": 2.84, "g20242025": 5.93}, {"grad": "DOMALJEVAC/ŠAMAC", "2020": 58313760.0, "2021": 61420332.03, "2022": 69955026.03, "2023": 77338730.76, "2024": 88536427.22, "2025": 85460925.99, "g20202021": 5.33, "g20212022": 13.9, "g20222023": 10.55, "g20232024": 14.48, "g20242025": -3.47}, {"grad": "PROZOR", "2020": 48939966.0, "2021": 58943562.73, "2022": 66296840.96, "2023": 69959331.9, "2024": 77357641.02, "2025": 80459198.07, "g20202021": 20.44, "g20212022": 12.48, "g20222023": 5.52, "g20232024": 10.58, "g20242025": 4.01}, {"grad": "GLAMOČ", "2020": 50997314.0, "2021": 56422234.87, "2022": 64483217.52, "2023": 61079120.94, "2024": 62203683.78, "2025": 63881871.03, "g20202021": 10.64, "g20212022": 14.29, "g20222023": -5.28, "g20232024": 1.84, "g20242025": 2.7}, {"grad": "KUPRES", "2020": 44580638.0, "2021": 47900234.76, "2022": 57857109.12, "2023": 53739865.37, "2024": 55846819.77, "2025": 60166874.61, "g20202021": 7.45, "g20212022": 20.79, "g20222023": -7.12, "g20232024": 3.92, "g20242025": 7.74}, {"grad": "TRNOVO", "2020": 13461277.0, "2021": 16320109.01, "2022": 19424331.63, "2023": 24505897.08, "2024": 29594121.05, "2025": 31104262.75, "g20202021": 21.24, "g20212022": 19.02, "g20222023": 26.16, "g20232024": 20.76, "g20242025": 5.1}, {"grad": "SAPNA", "2020": 22383133.0, "2021": 24463417.71, "2022": 27019005.0, "2023": 27723590.18, "2024": 26748135.48, "2025": 30418143.94, "g20202021": 9.29, "g20212022": 10.45, "g20222023": 2.61, "g20232024": -3.52, "g20242025": 13.72}, {"grad": "TEOČAK", "2020": 19497906.0, "2021": 20723988.1, "2022": 23694274.27, "2023": 26538568.79, "2024": 26430137.47, "2025": 29645851.1, "g20202021": 6.29, "g20212022": 14.33, "g20222023": 12.0, "g20232024": -0.41, "g20242025": 12.17}, {"grad": "BOSANSKO GRAHOVO", "2020": 22455542.0, "2021": 21556489.46, "2022": 25545336.57, "2023": 29223964.54, "2024": 28972238.42, "2025": 28854850.76, "g20202021": -4.0, "g20212022": 18.5, "g20222023": 14.4, "g20232024": -0.86, "g20242025": -0.41}, {"grad": "RAVNO", "2020": 6976257.0, "2021": 9696844.89, "2022": 10140751.63, "2023": 8524853.16, "2024": 9046896.93, "2025": 8776915.11, "g20202021": 39.0, "g20212022": 4.58, "g20222023": -15.93, "g20232024": 6.12, "g20242025": -2.98}, {"grad": "FOČA", "2020": 6744907.0, "2021": 6706699.26, "2022": 7466742.29, "2023": 6171410.18, "2024": 6270612.39, "2025": 7661813.82, "g20202021": -0.57, "g20212022": 11.33, "g20222023": -17.35, "g20232024": 1.61, "g20242025": 22.19}, {"grad": "PALE", "2020": 2185307.0, "2021": 2021587.0, "2022": 2199573.01, "2023": 2784452.84, "2024": 2433230.08, "2025": 3618321.83, "g20202021": -7.49, "g20212022": 8.8, "g20222023": 26.59, "g20232024": -12.61, "g20242025": 48.7}, {"grad": "DOBRETIĆI", "2020": 881544.0, "2021": 813401.23, "2022": 2293378.7, "2023": 3168436.99, "2024": 2307799.16, "2025": 2667712.07, "g20202021": -7.73, "g20212022": 181.95, "g20222023": 38.16, "g20232024": -27.16, "g20242025": 15.6}], "annual_totals": {"2020": 42283397083.0, "2021": 49522939221.909996, "2022": 58841114268.69, "2023": 63705773733.14, "2024": 68011111999.22, "2025": 75451871066.47}, "annual_years": ["2020", "2021", "2022", "2023", "2024", "2025"], "monthly_fbih": {"2020-09": 3524191612.53, "2020-10": 3638997720.07, "2020-11": 3289992844.42, "2020-12": 3930082191.0, "2021-09": 4168142011.41, "2021-10": 4141322627.23, "2021-11": 3890769670.61, "2021-12": 4865608822.66, "2022-01": 3739860836.21, "2022-02": 3791759022.52, "2022-03": 4573449651.3, "2022-04": 4581484165.17, "2022-05": 4562921295.13, "2022-06": 4578392503.71, "2022-07": 4868761188.13, "2022-08": 5016421605.03, "2022-09": 5026764379.81, "2022-10": 5096091760.29, "2022-11": 4807574621.55, "2022-12": 5360450167.09, "2023-01": 3837799283.59, "2023-02": 4245391904.6, "2023-03": 4976558618.08, "2023-04": 4642576677.42, "2023-05": 4990876681.92, "2023-06": 5037350825.98, "2023-07": 5403152014.82, "2023-08": 5725099320.72, "2023-09": 5228499139.26, "2023-10": 5564621707.16, "2023-11": 5375517806.33, "2023-12": 5658284169.5, "2024-01": 4572237300.8, "2024-02": 4943799503.5, "2024-03": 5012676619.83, "2024-04": 5054179510.15, "2024-05": 5562985341.94, "2024-06": 5416593251.9, "2024-07": 6054206070.99, "2024-08": 5919665070.06, "2024-09": 5447107044.43, "2024-10": 5900891686.33, "2024-11": 5599561730.28, "2024-12": 6219631152.22, "2025-01": 4998976517.99, "2025-02": 5157277911.36, "2025-03": 5567734931.12, "2025-04": 6094876569.75, "2025-05": 5993394291.49, "2025-06": 5843366436.05, "2025-07": 6457778143.18, "2025-08": 6066161170.1, "2025-09": 6134005063.11, "2025-10": 6625811254.03, "2025-11": 5575606043.45, "2025-12": 7127838877.88, "2026-01": 5050002598.67, "2026-02": 5540592053.64}, "monthly_yoy": {"2021-09": 18.27, "2021-10": 13.8, "2021-11": 18.26, "2021-12": 23.8, "2022-09": 20.6, "2022-10": 23.05, "2022-11": 23.56, "2022-12": 10.17, "2023-01": 2.62, "2023-02": 11.96, "2023-03": 8.81, "2023-04": 1.33, "2023-05": 9.38, "2023-06": 10.02, "2023-07": 10.98, "2023-08": 14.13, "2023-09": 4.01, "2023-10": 9.19, "2023-11": 11.81, "2023-12": 5.56, "2024-01": 19.14, "2024-02": 16.45, "2024-03": 0.73, "2024-04": 8.87, "2024-05": 11.46, "2024-06": 7.53, "2024-07": 12.05, "2024-08": 3.4, "2024-09": 4.18, "2024-10": 6.04, "2024-11": 4.17, "2024-12": 9.92, "2025-01": 9.33, "2025-02": 4.32, "2025-03": 11.07, "2025-04": 20.59, "2025-05": 7.74, "2025-06": 7.88, "2025-07": 6.67, "2025-08": 2.47, "2025-09": 12.61, "2025-10": 12.28, "2025-11": -0.43, "2025-12": 14.6, "2026-01": 1.02, "2026-02": 7.43}, "trailing_12m": {"2022-04": 48135661175.13, "2022-05": 49174390857.73, "2022-06": 50113785641.37, "2022-07": 51692553985.08, "2022-08": 52778893399.11, "2022-09": 53637515767.51, "2022-10": 54592284900.57, "2022-11": 55509089851.51, "2022-12": 56003931195.94, "2023-01": 56101869643.32, "2023-02": 56555502525.4, "2023-03": 56958611492.18, "2023-04": 57019704004.43, "2023-05": 57447659391.22, "2023-06": 57906617713.49, "2023-07": 58441008540.18, "2023-08": 59149686255.87, "2023-09": 59351421015.32, "2023-10": 59819950962.19, "2023-11": 60387894146.97, "2023-12": 60685728149.38, "2024-01": 61420166166.59, "2024-02": 62118573765.49, "2024-03": 62154691767.24, "2024-04": 62566294599.97, "2024-05": 63138403259.99, "2024-06": 63517645685.909996, "2024-07": 64168699742.08, "2024-08": 64363265491.42, "2024-09": 64581873396.59, "2024-10": 64918143375.76, "2024-11": 65142187299.71, "2024-12": 65703534282.43, "2025-01": 66130273499.619995, "2025-02": 66343751907.479996, "2025-03": 66898810218.77, "2025-04": 67939507278.369995, "2025-05": 68369916227.92, "2025-06": 68796689412.07, "2025-07": 69200261484.26, "2025-08": 69346757584.3, "2025-09": 70033655602.98, "2025-10": 70758575170.68, "2025-11": 70734619483.85, "2025-12": 71642827209.51, "2026-01": 71693853290.19, "2026-02": 72077167432.47}, "all_periods": ["2020-09", "2020-10", "2020-11", "2020-12", "2021-09", "2021-10", "2021-11", "2021-12", "2022-01", "2022-02", "2022-03", "2022-04", "2022-05", "2022-06", "2022-07", "2022-08", "2022-09", "2022-10", "2022-11", "2022-12", "2023-01", "2023-02", "2023-03", "2023-04", "2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02"], "grad_monthly": {"ILIDŽA": {"2020-09": 250438906.59, "2020-10": 270727510.88, "2020-11": 250005844.31, "2020-12": 288894613.0, "2021-09": 299592231.09, "2021-10": 294678229.88, "2021-11": 281744521.5, "2021-12": 354241234.74, "2022-01": 255425073.68, "2022-02": 259661619.53, "2022-03": 309775954.62, "2022-04": 289855836.83, "2022-05": 303803163.55, "2022-06": 316484251.32, "2022-07": 339010490.51, "2022-08": 333336929.67, "2022-09": 370065374.75, "2022-10": 350910286.44, "2022-11": 345260099.51, "2022-12": 368532393.6, "2023-01": 256999491.15, "2023-02": 284897716.0, "2023-03": 358052425.12, "2023-04": 325205476.44, "2023-05": 356827724.55, "2023-06": 356314466.79, "2023-07": 384557579.09, "2023-08": 413869201.57, "2023-09": 385735806.24, "2023-10": 390296955.93, "2023-11": 395857106.6, "2023-12": 430358466.0, "2024-01": 343645025.72, "2024-02": 402228894.67, "2024-03": 395394670.96, "2024-04": 413663790.98, "2024-05": 480435118.93, "2024-06": 459785723.8, "2024-07": 519832473.21, "2024-08": 504887802.22, "2024-09": 470207782.99, "2024-10": 486362480.2, "2024-11": 461128676.49, "2024-12": 517103605.33, "2025-01": 411012685.76, "2025-02": 414971268.99, "2025-03": 447799990.49, "2025-04": 480211020.02, "2025-05": 490363826.3, "2025-06": 490558581.24, "2025-07": 532592991.27, "2025-08": 479284476.67, "2025-09": 514571113.48, "2025-10": 533439297.69, "2025-11": 446306777.21, "2025-12": 581183568.93, "2026-01": 381104121.59, "2026-02": 446720245.2}, "NOVI GRAD SARAJEVO": {"2020-09": 283970105.65, "2020-10": 290428338.02, "2020-12": 314900321.0, "2021-09": 331021980.13, "2021-10": 336375855.75, "2021-11": 320694836.62, "2021-12": 404204839.43, "2022-01": 295518052.07, "2022-02": 308187759.24, "2022-03": 344378922.26, "2022-04": 359478692.84, "2022-05": 362448704.74, "2022-06": 381824533.1, "2022-07": 400504020.93, "2022-08": 396499255.57, "2022-09": 394426714.79, "2022-10": 409296270.96, "2022-11": 386920872.94, "2022-12": 434583353.19, "2023-01": 307833590.88, "2023-02": 338473734.02, "2023-03": 403975299.37, "2023-04": 368056042.54, "2023-05": 411765979.3, "2023-06": 418995275.26, "2023-07": 435629923.23, "2023-08": 435077321.77, "2023-09": 417451607.25, "2023-10": 452672254.2, "2023-11": 445625184.53, "2023-12": 479222464.76, "2024-01": 391408660.77, "2024-02": 407452027.61, "2024-03": 416719677.5, "2024-04": 407657493.7, "2024-05": 441756745.84, "2024-06": 428786193.47, "2024-07": 453788434.23, "2024-08": 470560573.24, "2024-09": 425290796.0, "2024-10": 442189720.08, "2024-11": 423691260.63, "2024-12": 494275627.97, "2025-01": 386919098.27, "2025-02": 400423305.72, "2025-03": 444003927.66, "2025-04": 470322498.12, "2025-05": 468462774.26, "2025-06": 466104764.17, "2025-07": 496383937.25, "2025-08": 458856306.04, "2025-09": 488874393.2, "2025-10": 523177720.44, "2025-11": 445170063.25, "2025-12": 562041799.8, "2026-01": 421787300.59, "2026-02": 446929576.66}, "SARAJEVO CENTAR": {"2020-09": 190804645.44, "2020-10": 200292088.94, "2020-12": 249419098.0, "2021-09": 220846957.46, "2021-10": 207877884.89, "2021-11": 212592845.19, "2021-12": 299937232.62, "2022-01": 211801691.39, "2022-02": 193657386.52, "2022-03": 230209672.59, "2022-04": 216889329.4, "2022-05": 225428126.03, "2022-06": 228319649.8, "2022-07": 258428345.4, "2022-08": 262593288.1, "2022-09": 275190831.3, "2022-10": 279362071.22, "2022-11": 258585226.8, "2022-12": 327386656.55, "2023-01": 219344198.22, "2023-02": 245154601.19, "2023-03": 276638489.8, "2023-04": 261679352.11, "2023-05": 270363743.72, "2023-06": 269268840.39, "2023-07": 298637529.66, "2023-08": 306969821.39, "2023-09": 282827071.43, "2023-10": 303210752.7, "2023-11": 316230918.06, "2023-12": 349172114.98, "2024-01": 261709422.28, "2024-02": 261051745.72, "2024-03": 256279759.41, "2024-04": 273867162.99, "2024-05": 292336777.87, "2024-06": 293511763.42, "2024-07": 321560708.98, "2024-08": 324780457.6, "2024-09": 309259223.81, "2024-10": 348770801.08, "2024-11": 332214432.9, "2024-12": 420566874.47, "2025-01": 318211499.36, "2025-02": 305170503.7, "2025-03": 303676241.97, "2025-04": 356624158.07, "2025-05": 329280877.12, "2025-06": 319009530.59, "2025-07": 353740864.66, "2025-08": 327772098.01, "2025-09": 344771302.56, "2025-10": 385518050.12, "2025-11": 336470864.44, "2025-12": 445352172.06, "2026-01": 298180123.55, "2026-02": 311832658.13}, "TUZLA": {"2020-09": 204143567.57, "2020-10": 227389965.41, "2020-11": 202670554.15, "2020-12": 235843309.0, "2021-09": 245047736.06, "2021-10": 245619235.12, "2021-11": 238764687.07, "2021-12": 292813092.68, "2022-01": 219420390.61, "2022-02": 213340176.12, "2022-03": 259766122.07, "2022-04": 273664343.08, "2022-05": 260001535.43, "2022-06": 269088976.43, "2022-07": 291661795.77, "2022-08": 245173705.21, "2022-09": 292618444.6, "2022-10": 295459299.82, "2022-11": 292977037.79, "2022-12": 333612646.25, "2023-01": 238414197.45, "2023-02": 251433242.08, "2023-03": 290678582.87, "2023-04": 283129859.17, "2023-05": 288555521.23, "2023-06": 315812276.4, "2023-07": 335313714.66, "2023-08": 359515219.67, "2023-09": 319915915.03, "2023-10": 330336721.63, "2023-11": 334305193.35, "2023-12": 357859666.32, "2024-01": 291179505.95, "2024-02": 295198660.13, "2024-03": 304538433.92, "2024-04": 315188974.93, "2024-05": 333140975.33, "2024-06": 322232328.1, "2024-07": 364052183.44, "2024-08": 366129339.18, "2024-09": 318909179.89, "2024-10": 352034197.49, "2024-11": 343364900.49, "2024-12": 387840584.27, "2025-01": 301108368.92, "2025-02": 293859940.85, "2025-03": 319945751.06, "2025-04": 367797760.8, "2025-05": 346959824.04, "2025-06": 336821129.62, "2025-07": 360426124.53, "2025-08": 363336716.18, "2025-09": 352417268.21, "2025-10": 378365218.21, "2025-11": 311617886.73, "2025-12": 415350155.08, "2026-01": 277388952.54, "2026-02": 308833268.62}, "MOSTAR": {"2020-09": 205868174.17, "2020-10": 217207889.56, "2020-11": 197043923.8, "2020-12": 233614124.0, "2021-09": 245879096.27, "2021-10": 250973864.85, "2021-11": 221993081.38, "2021-12": 287057317.28, "2022-01": 207252802.79, "2022-02": 218507129.29, "2022-03": 266471743.5, "2022-04": 260967227.52, "2022-05": 278254125.02, "2022-06": 266551081.21, "2022-07": 279457378.85, "2022-08": 294786226.14, "2022-09": 297825860.63, "2022-10": 292162105.85, "2022-11": 263010280.92, "2022-12": 333200576.93, "2023-01": 219400674.87, "2023-02": 258353216.22, "2023-03": 291316480.58, "2023-04": 269046023.86, "2023-05": 296375810.06, "2023-06": 291669984.57, "2023-07": 312086125.31, "2023-08": 319291592.54, "2023-09": 311041457.2, "2023-10": 322781913.42, "2023-11": 308271144.59, "2023-12": 347386437.64, "2024-01": 252919524.43, "2024-02": 273382540.08, "2024-03": 284068719.28, "2024-04": 287080495.59, "2024-05": 313731146.99, "2024-06": 299746585.24, "2024-07": 346056695.0, "2024-08": 321878917.34, "2024-09": 310448566.14, "2024-10": 326991123.32, "2024-11": 307483590.81, "2024-12": 337069163.74, "2025-01": 258607172.85, "2025-02": 277957988.59, "2025-03": 312598234.28, "2025-04": 338534664.36, "2025-05": 341897092.2, "2025-06": 340878159.07, "2025-07": 396703598.24, "2025-08": 336502952.18, "2025-09": 355790935.44, "2025-10": 368327583.89, "2025-11": 319336362.31, "2025-12": 411759791.85, "2026-01": 289493732.24, "2026-02": 306418942.01}, "ZENICA": {"2020-09": 122482632.86, "2020-10": 129981227.21, "2020-11": 114108946.68, "2020-12": 137811559.0, "2021-09": 128730505.12, "2021-10": 127685721.92, "2021-11": 127425988.57, "2021-12": 177219701.86, "2022-01": 152019201.34, "2022-02": 148068173.75, "2022-03": 178511457.21, "2022-04": 198797696.91, "2022-05": 217422411.32, "2022-06": 237391027.39, "2022-07": 226495933.76, "2022-08": 271175773.06, "2022-09": 221467206.92, "2022-10": 261571709.11, "2022-11": 240676012.59, "2022-12": 246845970.83, "2023-01": 168341439.52, "2023-02": 222544826.74, "2023-03": 255940770.67, "2023-04": 226623464.49, "2023-05": 204900551.29, "2023-06": 222248954.84, "2023-07": 262919501.64, "2023-08": 261273859.25, "2023-09": 196350926.39, "2023-10": 241443445.49, "2023-11": 228575497.34, "2023-12": 217097551.44, "2024-01": 185418798.77, "2024-02": 192497055.89, "2024-03": 221277452.47, "2024-04": 222352551.11, "2024-05": 228675524.04, "2024-06": 250228977.45, "2024-07": 214700419.23, "2024-08": 280795833.16, "2024-09": 233443952.13, "2024-10": 265424238.24, "2024-11": 253131775.14, "2024-12": 297602257.86, "2025-01": 250388153.17, "2025-02": 263515162.54, "2025-03": 265426688.78, "2025-04": 283904042.27, "2025-05": 277425164.24, "2025-06": 281230958.85, "2025-07": 336601276.72, "2025-08": 307905051.09, "2025-09": 279486182.87, "2025-10": 285831172.25, "2025-11": 266962422.99, "2025-12": 324906624.64, "2026-01": 232819109.13, "2026-02": 296696137.2}, "TEŠANJ": {"2020-09": 117000956.31, "2020-10": 124118674.66, "2020-11": 114261898.07, "2020-12": 124645491.0, "2021-09": 142475405.74, "2021-10": 147077234.43, "2021-11": 141217267.45, "2021-12": 164211243.39, "2022-01": 136157613.7, "2022-02": 131087723.68, "2022-03": 161315613.05, "2022-04": 157381145.37, "2022-05": 147421981.65, "2022-06": 144078064.35, "2022-07": 148346864.5, "2022-08": 155152535.34, "2022-09": 162882738.06, "2022-10": 159043533.83, "2022-11": 156920727.9, "2022-12": 169961771.31, "2023-01": 125432063.37, "2023-02": 141661371.77, "2023-03": 165468426.26, "2023-04": 158859570.4, "2023-05": 165975045.64, "2023-06": 168147554.32, "2023-07": 192915387.04, "2023-08": 224679959.63, "2023-09": 207715674.49, "2023-10": 227853950.87, "2023-11": 224309948.05, "2023-12": 222705646.82, "2024-01": 191834306.08, "2024-02": 210131875.65, "2024-03": 198106060.58, "2024-04": 201507057.18, "2024-05": 226678924.97, "2024-06": 208750918.14, "2024-07": 241680111.49, "2024-08": 212042963.89, "2024-09": 221151568.27, "2024-10": 229617953.77, "2024-11": 224591281.83, "2024-12": 220514114.19, "2025-01": 198149928.11, "2025-02": 215189347.36, "2025-03": 206269523.59, "2025-04": 225298232.65, "2025-05": 234194292.22, "2025-06": 224836237.65, "2025-07": 262359494.43, "2025-08": 233790196.29, "2025-09": 244021095.25, "2025-10": 312708209.68, "2025-11": 289235923.48, "2025-12": 365341836.38, "2026-01": 246658542.28, "2026-02": 285538932.07}, "NOVO SARAJEVO": {"2020-09": 133905975.64, "2020-10": 147212539.09, "2020-11": 133096311.99, "2020-12": 171165637.0, "2021-09": 136850299.61, "2021-10": 148369318.57, "2021-11": 138100801.51, "2021-12": 208532606.68, "2022-01": 139252899.9, "2022-02": 123511398.67, "2022-03": 163983222.76, "2022-04": 159033514.54, "2022-05": 156613379.54, "2022-06": 154230049.5, "2022-07": 169455099.03, "2022-08": 168122142.48, "2022-09": 178478778.33, "2022-10": 193339456.85, "2022-11": 183435211.91, "2022-12": 229136365.35, "2023-01": 151649462.92, "2023-02": 158343434.62, "2023-03": 182070820.42, "2023-04": 178778332.07, "2023-05": 188068522.78, "2023-06": 189834530.75, "2023-07": 193841372.58, "2023-08": 207054891.95, "2023-09": 189082389.18, "2023-10": 214132069.94, "2023-11": 210186317.33, "2023-12": 261652154.09, "2024-01": 176573477.84, "2024-02": 178587739.34, "2024-03": 183105920.47, "2024-04": 185821718.74, "2024-05": 203079589.98, "2024-06": 211415196.15, "2024-07": 225974059.62, "2024-08": 208371112.81, "2024-09": 200811675.72, "2024-10": 237139292.49, "2024-11": 208307906.52, "2024-12": 286382359.97, "2025-01": 196509455.02, "2025-02": 187425762.7, "2025-03": 204850400.53, "2025-04": 231235964.12, "2025-05": 229485734.26, "2025-06": 222681649.69, "2025-07": 231102106.26, "2025-08": 220631709.2, "2025-09": 213676689.67, "2025-10": 263452943.28, "2025-11": 211244981.88, "2025-12": 297726367.29, "2026-01": 197184540.78, "2026-02": 198116702.9}, "ŠIROKI BRIJEG": {"2020-09": 91277156.58, "2020-10": 104898368.84, "2020-11": 94451163.33, "2020-12": 105470175.0, "2021-09": 108265062.09, "2021-10": 111782769.76, "2021-11": 106684033.43, "2021-12": 133445613.31, "2022-01": 105089296.4, "2022-02": 116729609.42, "2022-03": 128890037.48, "2022-04": 124429667.78, "2022-05": 124756933.06, "2022-06": 112933529.04, "2022-07": 127394769.87, "2022-08": 147182122.71, "2022-09": 126355400.69, "2022-10": 117526989.96, "2022-11": 135781193.04, "2022-12": 165887812.02, "2023-01": 108459894.48, "2023-02": 128987780.51, "2023-03": 167944993.8, "2023-04": 124257574.23, "2023-05": 145177139.12, "2023-06": 142114904.14, "2023-07": 138438348.52, "2023-08": 144473151.75, "2023-09": 168983009.21, "2023-10": 150355926.84, "2023-11": 155565142.24, "2023-12": 144455728.45, "2024-01": 136084428.65, "2024-02": 143335578.2, "2024-03": 144922796.32, "2024-04": 140161390.93, "2024-05": 142759236.54, "2024-06": 149343018.66, "2024-07": 169012111.96, "2024-08": 161858371.62, "2024-09": 165365544.38, "2024-10": 172075476.06, "2024-11": 150829271.87, "2024-12": 214744560.24, "2025-01": 140677432.66, "2025-02": 153359055.86, "2025-03": 165631143.1, "2025-04": 199988136.5, "2025-05": 167419010.61, "2025-06": 158458879.35, "2025-07": 182816445.22, "2025-08": 155486002.38, "2025-09": 166912067.43, "2025-10": 175967540.89, "2025-11": 175552628.19, "2025-12": 213282607.16, "2026-01": 154514784.01, "2026-02": 172859617.25}, "VISOKO": {"2020-09": 98017398.54, "2020-10": 100523322.44, "2020-11": 92945459.52, "2020-12": 113588266.0, "2021-09": 101790198.79, "2021-10": 109072840.45, "2021-11": 105375959.83, "2021-12": 124609189.46, "2022-01": 93768535.17, "2022-02": 102400546.14, "2022-03": 133321715.54, "2022-04": 125984396.57, "2022-05": 108704596.73, "2022-06": 115729324.89, "2022-07": 102758170.82, "2022-08": 110844123.13, "2022-09": 116523465.6, "2022-10": 122600220.5, "2022-11": 115381553.18, "2022-12": 131621922.46, "2023-01": 95184492.18, "2023-02": 99570838.49, "2023-03": 114611130.72, "2023-04": 108934933.48, "2023-05": 121954422.78, "2023-06": 119213390.55, "2023-07": 116451423.75, "2023-08": 119708723.61, "2023-09": 109514747.71, "2023-10": 135189994.86, "2023-11": 134144165.8, "2023-12": 138746815.37, "2024-01": 105505634.2, "2024-02": 117042170.39, "2024-03": 113411940.31, "2024-04": 111808046.75, "2024-05": 121459693.9, "2024-06": 114326501.75, "2024-07": 126581865.42, "2024-08": 121595048.07, "2024-09": 128078864.36, "2024-10": 136522746.42, "2024-11": 147861132.23, "2024-12": 155159882.95, "2025-01": 117870756.97, "2025-02": 137129790.12, "2025-03": 141018830.51, "2025-04": 158130646.01, "2025-05": 142007555.96, "2025-06": 145226922.2, "2025-07": 148983872.19, "2025-08": 152461883.58, "2025-09": 156562787.92, "2025-10": 176141605.75, "2025-11": 146718085.13, "2025-12": 204012770.65, "2026-01": 125331087.08, "2026-02": 132933828.85}, "LUKAVAC": {"2020-09": 106450865.04, "2020-10": 100090230.6, "2020-11": 85897879.87, "2020-12": 97780461.0, "2021-09": 96168392.17, "2021-10": 96557824.76, "2021-11": 94409608.16, "2021-12": 161891740.38, "2022-01": 134552351.5, "2022-02": 118760663.0, "2022-03": 160462833.31, "2022-04": 160611498.65, "2022-05": 120010680.64, "2022-06": 98763864.26, "2022-07": 99940015.05, "2022-08": 104293894.82, "2022-09": 106156703.79, "2022-10": 106102740.15, "2022-11": 100245699.02, "2022-12": 105598741.83, "2023-01": 80139169.64, "2023-02": 80375890.15, "2023-03": 99808426.39, "2023-04": 98465290.32, "2023-05": 125652134.08, "2023-06": 122155357.34, "2023-07": 130616840.95, "2023-08": 154197246.38, "2023-09": 163397640.24, "2023-10": 171101958.49, "2023-11": 156313992.11, "2023-12": 151167657.17, "2024-01": 122216792.76, "2024-02": 151153053.26, "2024-03": 129523547.16, "2024-04": 128875769.13, "2024-05": 149994173.53, "2024-06": 149622233.36, "2024-07": 156059698.75, "2024-08": 138557151.85, "2024-09": 138052727.56, "2024-10": 150126692.05, "2024-11": 160324529.02, "2024-12": 155652359.28, "2025-01": 141180603.62, "2025-02": 133538171.65, "2025-03": 161573795.58, "2025-04": 151961553.86, "2025-05": 162167438.39, "2025-06": 142457035.37, "2025-07": 153513237.47, "2025-08": 135977370.58, "2025-09": 152784137.35, "2025-10": 149173059.31, "2025-11": 116608563.33, "2025-12": 148053171.38, "2026-01": 105973696.45, "2026-02": 122225094.73}, "ŽIVINICE": {"2020-09": 91364109.26, "2020-10": 98377765.22, "2020-11": 87793259.58, "2020-12": 93638706.0, "2021-09": 110338151.63, "2021-10": 100839326.07, "2021-11": 96764830.68, "2021-12": 107129085.18, "2022-01": 89397229.07, "2022-02": 94904647.47, "2022-03": 116271309.12, "2022-04": 120029289.1, "2022-05": 117427029.82, "2022-06": 118390853.97, "2022-07": 127337463.52, "2022-08": 122851181.85, "2022-09": 121726531.58, "2022-10": 126478645.16, "2022-11": 116247919.57, "2022-12": 121434534.46, "2023-01": 86917952.53, "2023-02": 103378049.83, "2023-03": 118574013.62, "2023-04": 111693596.31, "2023-05": 125177192.74, "2023-06": 119789617.03, "2023-07": 129923559.75, "2023-08": 139293849.68, "2023-09": 125997555.63, "2023-10": 130065818.84, "2023-11": 125441685.22, "2023-12": 125284955.48, "2024-01": 106692856.39, "2024-02": 118088040.06, "2024-03": 122612648.91, "2024-04": 121883149.37, "2024-05": 136184791.82, "2024-06": 133465333.87, "2024-07": 148072810.89, "2024-08": 149608313.45, "2024-09": 131989130.1, "2024-10": 145360233.24, "2024-11": 133222027.82, "2024-12": 147077506.94, "2025-01": 115355267.04, "2025-02": 119207109.41, "2025-03": 129537978.71, "2025-04": 148795564.43, "2025-05": 145303839.38, "2025-06": 138074695.84, "2025-07": 153974771.65, "2025-08": 147030796.51, "2025-09": 144541281.28, "2025-10": 153488359.02, "2025-11": 126408763.57, "2025-12": 164530347.55, "2026-01": 110690569.11, "2026-02": 119075560.08}, "HADŽIĆI": {"2020-09": 78914102.57, "2020-10": 73273172.12, "2020-11": 67856026.34, "2020-12": 76500519.0, "2021-09": 90677062.27, "2021-10": 81049507.94, "2021-11": 70734120.94, "2021-12": 89774446.98, "2022-01": 70465026.59, "2022-02": 73915291.67, "2022-03": 90308778.0, "2022-04": 86002239.66, "2022-05": 92358902.77, "2022-06": 89579525.2, "2022-07": 89229490.61, "2022-08": 96873340.77, "2022-09": 96920873.91, "2022-10": 95707486.59, "2022-11": 86601704.23, "2022-12": 105591558.54, "2023-01": 76378119.68, "2023-02": 82593334.28, "2023-03": 101034874.7, "2023-04": 87512813.57, "2023-05": 108551897.53, "2023-06": 108862447.58, "2023-07": 112484514.53, "2023-08": 115966749.53, "2023-09": 122782393.62, "2023-10": 112008799.84, "2023-11": 107718667.76, "2023-12": 117916878.49, "2024-01": 87444683.26, "2024-02": 93613082.85, "2024-03": 94838148.36, "2024-04": 100150433.6, "2024-05": 111732149.14, "2024-06": 106248968.92, "2024-07": 143940590.72, "2024-08": 132661521.3, "2024-09": 120351222.41, "2024-10": 126392431.67, "2024-11": 121539083.96, "2024-12": 120563528.9, "2025-01": 99135733.86, "2025-02": 123160365.79, "2025-03": 132483632.13, "2025-04": 150476997.58, "2025-05": 145421044.12, "2025-06": 147664863.73, "2025-07": 164654232.34, "2025-08": 147983858.12, "2025-09": 133944256.41, "2025-10": 157884052.8, "2025-11": 123742388.97, "2025-12": 151476662.96, "2026-01": 113905829.19, "2026-02": 139561013.26}, "BIHAĆ": {"2020-09": 78905532.01, "2020-10": 84338836.45, "2020-11": 71382978.73, "2020-12": 87901303.0, "2021-09": 96327033.42, "2021-10": 93743435.57, "2021-11": 83462785.95, "2021-12": 105573472.44, "2022-01": 82158213.31, "2022-02": 84434362.75, "2022-03": 99603164.38, "2022-04": 107510510.47, "2022-05": 104121268.43, "2022-06": 103013635.85, "2022-07": 113833735.65, "2022-08": 123017224.78, "2022-09": 104757720.77, "2022-10": 108327005.73, "2022-11": 101478339.25, "2022-12": 109471949.45, "2023-01": 80486977.49, "2023-02": 84804970.99, "2023-03": 99380457.58, "2023-04": 100882161.84, "2023-05": 102779933.34, "2023-06": 105715758.0, "2023-07": 121146859.0, "2023-08": 130524891.86, "2023-09": 107505817.81, "2023-10": 105511794.86, "2023-11": 104158712.3, "2023-12": 112579279.87, "2024-01": 86130408.2, "2024-02": 92665285.46, "2024-03": 95793813.94, "2024-04": 98848378.7, "2024-05": 115411267.77, "2024-06": 105028089.5, "2024-07": 125557414.39, "2024-08": 126891259.12, "2024-09": 103476008.64, "2024-10": 106259638.7, "2024-11": 102029048.72, "2024-12": 113701838.01, "2025-01": 93652864.0, "2025-02": 94690719.74, "2025-03": 101737162.94, "2025-04": 119704632.88, "2025-05": 114230468.56, "2025-06": 109050479.6, "2025-07": 127083836.52, "2025-08": 129843806.57, "2025-09": 113010635.44, "2025-10": 122832663.06, "2025-11": 102942445.68, "2025-12": 132036021.2, "2026-01": 96130925.82, "2026-02": 105438614.75}, "GRAČANICA": {"2020-09": 83886484.89, "2020-10": 84342672.7, "2020-11": 78084246.44, "2020-12": 84385925.0, "2021-09": 104127190.66, "2021-10": 100545071.63, "2021-11": 97003404.33, "2021-12": 108415581.38, "2022-01": 90170143.11, "2022-02": 96432868.5, "2022-03": 118310460.2, "2022-04": 118783660.33, "2022-05": 113138747.56, "2022-06": 107633662.7, "2022-07": 109574130.2, "2022-08": 108160000.22, "2022-09": 114464802.76, "2022-10": 113722351.11, "2022-11": 103265257.33, "2022-12": 112949812.94, "2023-01": 88248391.61, "2023-02": 100828351.18, "2023-03": 120388358.56, "2023-04": 112346400.44, "2023-05": 118739557.8, "2023-06": 110780124.38, "2023-07": 118022410.09, "2023-08": 117404637.63, "2023-09": 116008926.28, "2023-10": 119708468.5, "2023-11": 113959604.67, "2023-12": 114886631.87, "2024-01": 94045455.28, "2024-02": 109850128.75, "2024-03": 111848493.43, "2024-04": 109804612.99, "2024-05": 121115457.62, "2024-06": 113675846.32, "2024-07": 123440126.48, "2024-08": 111453044.62, "2024-09": 105712058.95, "2024-10": 113610277.61, "2024-11": 115613218.14, "2024-12": 108994840.55, "2025-01": 97900495.81, "2025-02": 112673456.18, "2025-03": 116593895.07, "2025-04": 122078015.48, "2025-05": 120017487.85, "2025-06": 112871172.62, "2025-07": 126570487.89, "2025-08": 120099972.35, "2025-09": 120585046.91, "2025-10": 129412593.54, "2025-11": 102455098.72, "2025-12": 133673063.15, "2026-01": 95001537.45, "2026-02": 115584861.52}}, "top_grads": ["ILIDŽA", "NOVI GRAD SARAJEVO", "SARAJEVO CENTAR", "TUZLA", "MOSTAR", "ZENICA", "TEŠANJ", "NOVO SARAJEVO", "ŠIROKI BRIJEG", "VISOKO", "LUKAVAC", "ŽIVINICE", "HADŽIĆI", "BIHAĆ", "GRAČANICA"]};
+
+// ═══════════════════════ HELPERS ═══════════════════════
+const fmt = (n, decimals=0) => n == null ? '—' : (n/1e6).toLocaleString('bs-BA', {minimumFractionDigits:decimals, maximumFractionDigits:decimals}) + ' M';
+const fmtB = (n) => n == null ? '—' : (n/1e9).toLocaleString('bs-BA', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' mlrd';
+const fmtPct = (n) => n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(1) + '%';
+const fmtRaw = (n) => n == null ? '—' : Math.round(n).toLocaleString('bs-BA');
+const periodLabel = (p) => {
+  const months = ['','Sij','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  const [y,m] = p.split('-');
+  return months[parseInt(m)] + ' ' + y;
+};
+
+const chartDefaults = {
+  plugins: { legend: { labels: { color: '#4b5563', font: { family: 'Source Sans 3', size: 11 }, boxWidth: 12 } } },
+  scales: {
+    x: { ticks: { color: '#4b5563', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(209,213,222,0.8)' } },
+    y: { ticks: { color: '#4b5563', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(209,213,222,0.8)' } }
+  }
+};
+
+// ═══════════════════════ TAB SWITCH ═══════════════════════
+
+// ═══════════════════════ ANNUAL TABLE ═══════════════════════
+let annualData = DATA.annual_rows.map(r => ({...r}));
+let annualFiltered = [...annualData];
+let annualPage = 1;
+const annualPageSize = 20;
+let annualSortCol = '2025';
+let annualSortDir = -1;
+
+function filterAnnual() {
+  const q = document.getElementById('annual-search').value.toLowerCase();
+  annualFiltered = annualData.filter(r => r.grad.toLowerCase().includes(q));
+  annualPage = 1;
+  renderAnnualTable();
+}
+
+function sortAnnual() {
+  const v = document.getElementById('annual-sort').value;
+  const [col, dir] = v.split('_');
+  annualFiltered.sort((a, b) => {
+    if (col === 'name') return dir === 'asc' ? a.grad.localeCompare(b.grad) : b.grad.localeCompare(a.grad);
+    if (col === 'rast') {
+      const va = a.g20242025 || -999, vb = b.g20242025 || -999;
+      return dir === 'asc' ? va - vb : vb - va;
+    }
+    const key = col;
+    const va = a[key] || 0, vb = b[key] || 0;
+    return dir === 'desc' ? vb - va : va - vb;
+  });
+  annualPage = 1;
+  renderAnnualTable();
+}
+
+function sortBy(table, col) {
+  if (table === 'annual') {
+    if (annualSortCol === col) annualSortDir *= -1;
+    else { annualSortCol = col; annualSortDir = -1; }
+    annualFiltered.sort((a,b) => {
+      const va = col === 'name' ? a.grad : (a[col] || (col.startsWith('rast') ? -999 : 0));
+      const vb = col === 'name' ? b.grad : (b[col] || (col.startsWith('rast') ? -999 : 0));
+      return col === 'name'
+        ? annualSortDir * va.localeCompare(vb)
+        : annualSortDir * (va - vb);
+    });
+    document.querySelectorAll('#annual-table th').forEach(th => {
+      th.classList.remove('sort-asc','sort-desc');
+      if (th.dataset.col === col) th.classList.add(annualSortDir === 1 ? 'sort-asc' : 'sort-desc');
+    });
+    annualPage = 1;
+    renderAnnualTable();
+  }
+}
+
+function rastBadge(v) {
+  if (v == null) return '<span class="badge neu">—</span>';
+  const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu';
+  return `<span class="badge ${cls}">${fmtPct(v)}</span>`;
+}
+
+function sparkline(r) {
+  const vals = [r['2020'], r['2021'], r['2022'], r['2023'], r['2024'], r['2025']].filter(v => v != null);
+  if (vals.length < 2) return '—';
+  const mn = Math.min(...vals), mx = Math.max(...vals), range = mx - mn || 1;
+  const pts = vals.map((v,i) => `${(i/(vals.length-1))*36},${10 - ((v-mn)/range)*8}`).join(' ');
+  const color = vals[vals.length-1] > vals[vals.length-2] ? '#15803d' : '#b91c1c';
+  return `<svg width="38" height="12" viewBox="0 0 38 12"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
+}
+
+function renderAnnualTable() {
+  const tbody = document.getElementById('annual-tbody');
+  document.getElementById('annual-count').textContent = `${annualFiltered.length} općina`;
+  const start = (annualPage - 1) * annualPageSize;
+  const page = annualFiltered.slice(start, start + annualPageSize);
+  const maxVal = Math.max(...annualData.map(r => r['2025'] || r['2024'] || 0));
+
+  tbody.innerHTML = page.map((r, i) => {
+    const rank = start + i + 1;
+    const barW = Math.round(((r['2025'] || r['2024'] || 0) / maxVal) * 60);
+    return `<tr>
+      <td class="rank">${rank}</td>
+      <td data-grad="${r.grad}" data-mode="annual" style="cursor:pointer">${r.grad}</td>
+      <td>${fmt(r['2020'], 1)}</td>
+      <td>${fmt(r['2021'], 1)}</td>
+      <td>${rastBadge(r.g20202021)}</td>
+      <td>${fmt(r['2022'], 1)}</td>
+      <td>${rastBadge(r.g20212022)}</td>
+      <td>${fmt(r['2023'], 1)}</td>
+      <td>${rastBadge(r.g20222023)}</td>
+      <td>${fmt(r['2024'], 1)}</td>
+      <td>${rastBadge(r.g20232024)}</td>
+      <td style="position:relative">
+        <div class="bar-bg" style="width:${barW}px;background:var(--accent)"></div>
+        <span class="bar-text">${fmt(r['2025'], 1)}</span>
+      </td>
+      <td>${rastBadge(r.g20242025)}</td>
+      <td>${sparkline(r)}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination('annual', annualFiltered.length, annualPage, annualPageSize, p => { annualPage = p; renderAnnualTable(); });
+}
+
+// ═══════════════════════ PAGINATION ═══════════════════════
+function renderPagination(id, total, current, size, cb) {
+  const pages = Math.ceil(total / size);
+  const el = document.getElementById(`${id}-pagination`);
+  if (!el) return;
+  let html = `<span class="page-info">${(current-1)*size+1}–${Math.min(current*size,total)} od ${total}</span>`;
+  html += `<button class="page-btn" onclick="(${cb.toString()})(${current-1})" ${current===1?'disabled':''}>‹</button>`;
+  for (let p = Math.max(1,current-2); p <= Math.min(pages,current+2); p++) {
+    html += `<button class="page-btn ${p===current?'active':''}" onclick="(${cb.toString()})(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" onclick="(${cb.toString()})(${current+1})" ${current===pages?'disabled':''}>›</button>`;
+  el.innerHTML = html;
+}
+
+// ═══════════════════════ ANNUAL CHARTS ═══════════════════════
+function initAnnualCharts() {
+  const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
+  const totals = years.map(y => DATA.annual_totals[y] / 1e9);
+
+  new Chart(document.getElementById('chartAnnualTotal'), {
+    type: 'bar',
+    data: {
+      labels: years.map(String),
+      datasets: [{
+        label: 'Ukupni promet (mlrd BAM)',
+        data: totals,
+        backgroundColor: ['rgba(26,86,219,0.2)','rgba(26,86,219,0.4)','rgba(26,86,219,0.6)','rgba(26,86,219,1)'],
+        borderColor: '#1a56db',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(2) + ' mlrd BAM' } } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' mlrd' } } }
+    }
+  });
+
+  const growths = [null];
+  for (let i = 1; i < years.length; i++) {
+    growths.push(((DATA.annual_totals[years[i]] / DATA.annual_totals[years[i-1]]) - 1) * 100);
+  }
+  new Chart(document.getElementById('chartAnnualGrowth'), {
+    type: 'bar',
+    data: {
+      labels: ['2020', '2020→21', '2021→22', '2022→23', '2023→24', '2024→25'],
+      datasets: [{
+        label: 'YoY rast (%)',
+        data: [null, growths[1], growths[2], growths[3], growths[4], growths[5]],
+        backgroundColor: [null, '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0891b2'].map(c => c ? c+'99' : 'transparent'),
+        borderColor: [null, '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0891b2'],
+        borderWidth: 2,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' +' + ctx.parsed.y.toFixed(2) + '%' } } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + '%' } } }
+    }
+  });
+
+  const top15 = DATA.annual_rows.slice(0, 15);
+  new Chart(document.getElementById('chartTop15'), {
+    type: 'bar',
+    data: {
+      labels: top15.map(r => r.grad.replace(' SARAJEVO','').replace('SARAJEVO ','SJJ ')),
+      datasets: [
+        { label: '2021', data: top15.map(r => (r['2021']||0)/1e6), backgroundColor: 'rgba(26,86,219,0.15)', borderRadius: 2 },
+        { label: '2022', data: top15.map(r => (r['2022']||0)/1e6), backgroundColor: 'rgba(26,86,219,0.4)', borderRadius: 2 },
+        { label: '2023', data: top15.map(r => (r['2023']||0)/1e6), backgroundColor: 'rgba(8,145,178,0.35)', borderRadius: 2 },
+        { label: '2024', data: top15.map(r => (r['2024']||0)/1e6), backgroundColor: 'rgba(8,145,178,0.6)', borderRadius: 2 },
+        { label: '2025', data: top15.map(r => (r['2025']||0)/1e6), backgroundColor: 'rgba(8,145,178,0.9)', borderRadius: 2 },
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'x',
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)} M BAM` } } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' M' } } }
+    }
+  });
+
+
+  // ── Top 5 Promet 2025 ─────────────────────────────────────────
+  const top5p = DATA.annual_rows
+    .filter(r => r['2025'] != null)
+    .sort((a,b) => (b['2025']||0) - (a['2025']||0))
+    .slice(0, 5);
+
+  const labelShort = name => name
+    .replace('NOVI GRAD SARAJEVO','NOVI GRAD SJJ')
+    .replace('SARAJEVO CENTAR','SJJ CENTAR')
+    .replace('NOVO SARAJEVO','NOVO SJJ');
+
+  new Chart(document.getElementById('chartTop5Promet'), {
+    type: 'bar',
+    data: {
+      labels: top5p.map(r => labelShort(r.grad)),
+      datasets: [{
+        label: 'Promet 2025 (M BAM)',
+        data: top5p.map(r => +((r['2025']||0)/1e6).toFixed(1)),
+        backgroundColor: ['#1a56db','#2563eb','#3b82f6','#60a5fa','#93c5fd'],
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(0)} M BAM` } }
+      },
+      scales: {
+        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v.toFixed(0)+' M' } },
+        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, font: { family: "'Source Sans 3'", size: 11 }, color: '#374151' } }
+      }
+    }
+  });
+
+  // ── Top 5 Rast 2024→2025 ─────────────────────────────────────
+  const top5r = DATA.annual_rows
+    .filter(r => r['g20242025'] != null && r['g20242025'] < 200 && (r['2025']||0) > 50e6)
+    .sort((a,b) => (b['g20242025']||0) - (a['g20242025']||0))
+    .slice(0, 5);
+
+  new Chart(document.getElementById('chartTop5Rast'), {
+    type: 'bar',
+    data: {
+      labels: top5r.map(r => labelShort(r.grad)),
+      datasets: [{
+        label: 'YoY rast 2024→2025',
+        data: top5r.map(r => +(r['g20242025']||0).toFixed(1)),
+        backgroundColor: top5r.map(r =>
+          r['g20242025'] >= 25 ? '#15803d' :
+          r['g20242025'] >= 15 ? '#16a34a' :
+          '#22c55e'
+        ),
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` +${ctx.parsed.x.toFixed(1)}%` } }
+      },
+      scales: {
+        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => '+'+v.toFixed(0)+'%' } },
+        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, font: { family: "'Source Sans 3'", size: 11 }, color: '#374151' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════ MONTHLY / TRAILING ═══════════════════════
+let trailMetric = 'trailing';
+let trailChart, yoyChart, gradChart;
+let activeGrads = ['NOVI GRAD SARAJEVO', 'ILIDŽA', 'TUZLA'];
+
+const GRAD_COLORS = ['#1a56db','#0891b2','#ff6b6b','#a78bfa','#c2410c','#34d399','#1d4ed8','#f472b6','#facc15','#38bdf8','#a3e635','#c084fc','#fb7185','#22d3ee','#fbbf24'];
+
+function setTrailMetric(m) {
+  trailMetric = m;
+  document.querySelectorAll('#trail-metric-chips .chip').forEach(c => c.classList.toggle('active', c.textContent.toLowerCase().includes(m === 'trailing' ? 'trailing' : m === 'monthly' ? 'mjes' : 'oboje')));
+  updateTrailChart();
+}
+
+function updateTrailChart() {
+  const periods = DATA.all_periods;
+  const labels = periods.map(periodLabel);
+  const trailing = periods.map(p => DATA.trailing_12m[p] ? DATA.trailing_12m[p]/1e9 : null);
+  const monthly = periods.map(p => DATA.monthly_fbih[p]/1e9);
+  const yoyLine = periods.map(p => DATA.monthly_yoy[p] || null);
+
+  const datasets = [];
+  if (trailMetric === 'trailing' || trailMetric === 'both') {
+    datasets.push({
+      label: 'Trailing 12M (mlrd BAM)',
+      data: trailing,
+      borderColor: '#1a56db',
+      backgroundColor: 'rgba(26,86,219,0.05)',
+      fill: true,
+      tension: 0.3,
+      borderWidth: 2,
+      pointRadius: 3,
+      yAxisID: 'y',
+      spanGaps: false,
+    });
+  }
+  if (trailMetric === 'monthly' || trailMetric === 'both') {
+    datasets.push({
+      label: 'Mjes. promet (mlrd BAM)',
+      data: monthly,
+      borderColor: '#0891b2',
+      backgroundColor: 'rgba(8,145,178,0.08)',
+      fill: false,
+      tension: 0.3,
+      borderWidth: 2,
+      pointRadius: 2,
+      yAxisID: 'y',
+    });
+  }
+  datasets.push({
+    label: 'YoY % (desna os)',
+    data: yoyLine,
+    borderColor: '#ff6b6b',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderDash: [4,3],
+    pointRadius: 2,
+    yAxisID: 'y1',
+    spanGaps: false,
+    type: 'line',
+  });
+
+  if (trailChart) trailChart.destroy();
+  trailChart = new Chart(document.getElementById('chartTrailing'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      ...chartDefaults,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: {
+        label: ctx => {
+          if (ctx.dataset.yAxisID === 'y1') return ` YoY: ${ctx.parsed.y != null ? '+'+ctx.parsed.y.toFixed(1)+'%' : '—'}`;
+          return ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2)+' mlrd' : '—'}`;
+        }
+      }}},
+      scales: {
+        x: chartDefaults.scales.x,
+        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+' mlrd' }, position: 'left' },
+        y1: { ticks: { color: '#b91c1c', font:{family:'Source Sans 3',size:10}, callback: v => v.toFixed(0)+'%' }, grid: { drawOnChartArea: false }, position: 'right' }
+      }
+    }
+  });
+}
+
+function updateYoYChart() {
+  const periods = DATA.all_periods.filter(p => DATA.monthly_yoy[p] != null);
+  const labels = periods.map(periodLabel);
+  const values = periods.map(p => DATA.monthly_yoy[p]);
+  const colors = values.map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)');
+
+  if (yoyChart) yoyChart.destroy();
+  yoyChart = new Chart(document.getElementById('chartYoY'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'YoY rast (%)',
+        data: values,
+        backgroundColor: colors,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y.toFixed(1)}%` } } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
+    }
+  });
+}
+
+function updateGradChart() {
+  const periods = DATA.all_periods;
+  const labels = periods.map(periodLabel);
+
+  const datasets = activeGrads.map((g, i) => ({
+    label: g,
+    data: periods.map(p => DATA.grad_monthly[g]?.[p] ? DATA.grad_monthly[g][p]/1e6 : null),
+    borderColor: GRAD_COLORS[i],
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    borderWidth: 2,
+    pointRadius: 2,
+    spanGaps: false,
+  }));
+
+  if (gradChart) gradChart.destroy();
+  gradChart = new Chart(document.getElementById('chartGradMonthly'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      ...chartDefaults,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1)+' M' : '—'}` } } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+' M' } } }
+    }
+  });
+}
+
+function initGradChips() {
+  const container = document.getElementById('grad-chips');
+  DATA.top_grads.forEach((g, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (activeGrads.includes(g) ? ' active' : '');
+    chip.style.setProperty('border-color', activeGrads.includes(g) ? GRAD_COLORS[i] : '');
+    chip.style.setProperty('color', activeGrads.includes(g) ? GRAD_COLORS[i] : '');
+    chip.textContent = g.split(' ')[0];
+    chip.title = g;
+    chip.onclick = () => {
+      if (activeGrads.includes(g)) {
+        if (activeGrads.length === 1) return;
+        activeGrads = activeGrads.filter(x => x !== g);
+      } else {
+        if (activeGrads.length >= 5) { activeGrads.shift(); }
+        activeGrads.push(g);
+      }
+      initGradChips();
+      updateGradChart();
+    };
+    container.appendChild(chip);
+  });
+}
+
+// ═══════════════════════ YOY TABLE ═══════════════════════
+function renderYoYTable() {
+  const yrFilter = document.getElementById('yoy-year-filter').value;
+  const q = (document.getElementById('yoy-search')?.value || '').toLowerCase();
+  const tbody = document.getElementById('yoy-tbody');
+
+  let periods = DATA.all_periods;
+  if (yrFilter !== 'all') periods = periods.filter(p => p.startsWith(yrFilter));
+
+  tbody.innerHTML = periods.map(p => {
+    const v = DATA.monthly_fbih[p];
+    const yoy = DATA.monthly_yoy[p];
+    const trail = DATA.trailing_12m[p];
+    const yr = p.slice(0,4), mo = parseInt(p.slice(5));
+    const prevP = `${parseInt(yr)-1}-${String(mo).padStart(2,'0')}`;
+    const prevV = DATA.monthly_fbih[prevP];
+
+    return `<tr>
+      <td style="text-align:left;font-family:'Source Serif 4',Georgia,serif;font-weight:600">${periodLabel(p)}</td>
+      <td>${fmtRaw(v)} BAM</td>
+      <td style="color:var(--muted);font-size:11px">${prevV ? periodLabel(prevP)+': '+fmtRaw(prevV) : '—'}</td>
+      <td>${yoy != null ? rastBadge(yoy) : '<span class="badge neu">n/a</span>'}</td>
+      <td style="color:var(--muted)">${trail ? fmtB(trail) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════ GRAD YOY TABLE ═══════════════════════
+function initGradYoYSelect() {
+  const sel = document.getElementById('grad-yoy-select');
+  DATA.annual_rows.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.grad;
+    opt.textContent = r.grad;
+    sel.appendChild(opt);
+  });
+}
+
+function renderGradYoY() {
+  const g = document.getElementById('grad-yoy-select').value;
+  const tbody = document.getElementById('grad-yoy-tbody');
+  if (!g) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Odaberi općinu</td></tr>'; return; }
+
+  const periods = DATA.all_periods;
+  tbody.innerHTML = periods.map(p => {
+    const v = DATA.grad_monthly[g]?.[p];
+    if (!v) return '';
+    const yr = p.slice(0,4), mo = parseInt(p.slice(5));
+    const prevP = `${parseInt(yr)-1}-${String(mo).padStart(2,'0')}`;
+    const prevV = DATA.grad_monthly[g]?.[prevP];
+    const yoy = prevV && prevV > 0 ? ((v/prevV)-1)*100 : null;
+    return `<tr>
+      <td style="text-align:left;font-family:'Source Serif 4',Georgia,serif;font-weight:600">${periodLabel(p)}</td>
+      <td>${fmtRaw(v)} BAM</td>
+      <td style="color:var(--muted);font-size:11px">${prevV ? periodLabel(prevP)+': '+fmtRaw(prevV) : '—'}</td>
+      <td>${yoy != null ? rastBadge(yoy) : '<span class="badge neu">n/a</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════ MONTHLY SUMMARY ═══════════════════════
+function initMonthlySummary() {
+  const lastPeriod = DATA.all_periods[DATA.all_periods.length - 1];
+  const lastTrail = DATA.trailing_12m[lastPeriod];
+  document.getElementById('trailing-val').textContent = lastTrail ? (lastTrail/1e9).toFixed(1)+' mlrd' : '—';
+  document.getElementById('trailing-as-of').textContent = 'do ' + periodLabel(lastPeriod);
+
+  const yoyVals = Object.values(DATA.monthly_yoy);
+  const avgYoY = yoyVals.reduce((a,b) => a+b, 0) / yoyVals.length;
+  const lastYoY = DATA.monthly_yoy[lastPeriod];
+
+  const container = document.getElementById('monthly-summary-row');
+  const cards = [
+    { label: 'Zadnji period', value: periodLabel(lastPeriod), change: fmtB(DATA.monthly_fbih[lastPeriod]), changeColor: 'var(--text)' },
+    { label: 'Trailing 12M', value: lastTrail ? fmtB(lastTrail) : '—', change: 'Klizni godišnji promet', changeColor: 'var(--muted)' },
+    { label: 'YoY zadnji', value: lastYoY != null ? fmtPct(lastYoY) : '—', change: 'Prosjek: +' + avgYoY.toFixed(1)+'%', changeColor: lastYoY > avgYoY ? 'var(--pos)' : 'var(--neg)' },
+    { label: 'Peak mjes.', value: fmtB(Math.max(...Object.values(DATA.monthly_fbih))), change: 'Jul 2024', changeColor: 'var(--accent)' },
+  ];
+  container.innerHTML = cards.map(c => `
+    <div class="summary-card">
+      <div class="sc-label">${c.label}</div>
+      <div class="sc-value">${c.value}</div>
+      <div class="sc-change" style="color:${c.changeColor}">${c.change}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════ INIT ═══════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Samo annual tab inicijaliziramo odmah (aktivan pri učitavanju)
+  renderAnnualTable();
+  initAnnualCharts();
+  // Monthly i GradYoY tabovi se inicijaliziraju lazy u switchSubTab()
+});
+
+
+// ═══════════════════════ TAB 3: GRADOVI YoY 12M ═══════════════════════
+const YOY_DATA = {"periods": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02"], "grad_data": {"BANOVIĆI": {"2025-03": {"curr": 27744889.13, "mom": 2.85, "yoy": 16.1}, "2025-04": {"curr": 28523158.21, "mom": 2.81, "yoy": 18.4}, "2025-05": {"curr": 26733968.79, "mom": -6.27, "yoy": 16.85}, "2025-06": {"curr": 26227844.02, "mom": -1.89, "yoy": 10.28}, "2025-07": {"curr": 30723016.38, "mom": 17.14, "yoy": 13.96}, "2025-08": {"curr": 27155262.35, "mom": -11.61, "yoy": 11.47}, "2025-09": {"curr": 27359392.65, "mom": 0.75, "yoy": 20.45}, "2025-10": {"curr": 32246793.65, "mom": 17.86, "yoy": 17.01}, "2025-11": {"curr": 26872276.23, "mom": -16.67, "yoy": -1.85}, "2025-12": {"curr": 29647775.74, "mom": 10.33, "yoy": 1.48}, "2026-01": {"curr": 23111326.87, "mom": -22.05, "yoy": -0.52}, "2026-02": {"curr": 23923569.56, "mom": 3.51, "yoy": -11.31}}, "BIHAĆ": {"2025-03": {"curr": 101737162.94, "mom": 7.44, "yoy": 6.2}, "2025-04": {"curr": 119704632.88, "mom": 17.66, "yoy": 21.1}, "2025-05": {"curr": 114230468.56, "mom": -4.57, "yoy": -1.02}, "2025-06": {"curr": 109050479.6, "mom": -4.53, "yoy": 3.83}, "2025-07": {"curr": 127083836.52, "mom": 16.54, "yoy": 1.22}, "2025-08": {"curr": 129843806.57, "mom": 2.17, "yoy": 2.33}, "2025-09": {"curr": 113010635.44, "mom": -12.96, "yoy": 9.21}, "2025-10": {"curr": 122832663.06, "mom": 8.69, "yoy": 15.6}, "2025-11": {"curr": 102942445.68, "mom": -16.19, "yoy": 0.9}, "2025-12": {"curr": 132036021.2, "mom": 28.26, "yoy": 16.12}, "2026-01": {"curr": 96130925.82, "mom": -27.19, "yoy": 2.65}, "2026-02": {"curr": 105438614.75, "mom": 9.68, "yoy": 11.35}}, "BOSANSKA KRUPA": {"2025-03": {"curr": 25774359.81, "mom": 8.73, "yoy": -3.12}, "2025-04": {"curr": 31713155.25, "mom": 23.04, "yoy": 19.62}, "2025-05": {"curr": 31404469.46, "mom": -0.97, "yoy": 8.16}, "2025-06": {"curr": 28838474.33, "mom": -8.17, "yoy": 3.79}, "2025-07": {"curr": 33116154.75, "mom": 14.83, "yoy": 2.77}, "2025-08": {"curr": 33367917.41, "mom": 0.76, "yoy": 17.63}, "2025-09": {"curr": 34481474.62, "mom": 3.34, "yoy": 30.97}, "2025-10": {"curr": 34658942.79, "mom": 0.51, "yoy": 29.75}, "2025-11": {"curr": 30105200.9, "mom": -13.14, "yoy": 13.92}, "2025-12": {"curr": 34939286.25, "mom": 16.06, "yoy": 23.18}, "2026-01": {"curr": 23851211.18, "mom": -31.74, "yoy": 15.64}, "2026-02": {"curr": 28435991.1, "mom": 19.22, "yoy": 19.96}}, "BOSANSKI PETROVAC": {"2025-03": {"curr": 13686819.07, "mom": 15.36, "yoy": 40.09}, "2025-04": {"curr": 13524497.68, "mom": -1.19, "yoy": 37.72}, "2025-05": {"curr": 14498414.75, "mom": 7.2, "yoy": -1.31}, "2025-06": {"curr": 14103209.84, "mom": -2.73, "yoy": 3.86}, "2025-07": {"curr": 13367459.64, "mom": -5.22, "yoy": 3.84}, "2025-08": {"curr": 12810763.28, "mom": -4.16, "yoy": -5.05}, "2025-09": {"curr": 14776279.45, "mom": 15.34, "yoy": 52.46}, "2025-10": {"curr": 18734824.76, "mom": 26.79, "yoy": 48.19}, "2025-11": {"curr": 13388904.23, "mom": -28.53, "yoy": 13.37}, "2025-12": {"curr": 11311311.04, "mom": -15.52, "yoy": -5.31}, "2026-01": {"curr": 10264043.45, "mom": -9.26, "yoy": 41.63}, "2026-02": {"curr": 13352526.24, "mom": 30.09, "yoy": 12.54}}, "BOSANSKO GRAHOVO": {"2025-03": {"curr": 3260540.94, "mom": 80.16, "yoy": 40.86}, "2025-04": {"curr": 3411320.72, "mom": 4.62, "yoy": 24.34}, "2025-05": {"curr": 2091095.2, "mom": -38.7, "yoy": -19.23}, "2025-06": {"curr": 2245631.15, "mom": 7.39, "yoy": 8.51}, "2025-07": {"curr": 2497844.11, "mom": 11.23, "yoy": -19.55}, "2025-08": {"curr": 2324974.41, "mom": -6.92, "yoy": -12.21}, "2025-09": {"curr": 2343612.58, "mom": 0.8, "yoy": -25.06}, "2025-10": {"curr": 2347973.76, "mom": 0.19, "yoy": -8.33}, "2025-11": {"curr": 2145121.82, "mom": -8.64, "yoy": -2.46}, "2025-12": {"curr": 2265243.16, "mom": 5.6, "yoy": 16.13}, "2026-01": {"curr": 1024859.39, "mom": -54.76, "yoy": -31.72}, "2026-02": {"curr": 2217034.06, "mom": 116.33, "yoy": 22.5}}, "BREZA": {"2025-03": {"curr": 20429036.59, "mom": -0.12, "yoy": -2.19}, "2025-04": {"curr": 23466141.8, "mom": 14.87, "yoy": 18.59}, "2025-05": {"curr": 22759021.42, "mom": -3.01, "yoy": 2.79}, "2025-06": {"curr": 21579994.65, "mom": -5.18, "yoy": -8.37}, "2025-07": {"curr": 23237590.3, "mom": 7.68, "yoy": -7.17}, "2025-08": {"curr": 24122035.52, "mom": 3.81, "yoy": 10.61}, "2025-09": {"curr": 21864198.24, "mom": -9.36, "yoy": 8.07}, "2025-10": {"curr": 22179426.16, "mom": 1.44, "yoy": -2.08}, "2025-11": {"curr": 20744527.23, "mom": -6.47, "yoy": -4.45}, "2025-12": {"curr": 25319524.78, "mom": 22.05, "yoy": 10.98}, "2026-01": {"curr": 21173042.97, "mom": -16.38, "yoy": 12.73}, "2026-02": {"curr": 19536285.63, "mom": -7.73, "yoy": -4.48}}, "BUGOJNO": {"2025-03": {"curr": 39657712.44, "mom": 3.76, "yoy": 4.65}, "2025-04": {"curr": 51776256.18, "mom": 30.56, "yoy": 44.61}, "2025-05": {"curr": 53250384.8, "mom": 2.85, "yoy": 33.32}, "2025-06": {"curr": 46871375.21, "mom": -11.98, "yoy": 19.65}, "2025-07": {"curr": 50189443.43, "mom": 7.08, "yoy": 4.51}, "2025-08": {"curr": 50576413.75, "mom": 0.77, "yoy": 7.58}, "2025-09": {"curr": 46892038.38, "mom": -7.28, "yoy": 26.85}, "2025-10": {"curr": 52687056.36, "mom": 12.36, "yoy": 31.7}, "2025-11": {"curr": 40572951.02, "mom": -22.99, "yoy": -4.94}, "2025-12": {"curr": 62075813.88, "mom": 53.0, "yoy": 33.95}, "2026-01": {"curr": 37767575.61, "mom": -39.16, "yoy": -2.11}, "2026-02": {"curr": 42388424.54, "mom": 12.23, "yoy": 10.9}}, "BUSOVAČA": {"2025-03": {"curr": 14330517.84, "mom": 1.2, "yoy": -8.67}, "2025-04": {"curr": 17239027.56, "mom": 20.3, "yoy": -3.14}, "2025-05": {"curr": 17459520.05, "mom": 1.28, "yoy": -6.42}, "2025-06": {"curr": 17275004.28, "mom": -1.06, "yoy": -15.55}, "2025-07": {"curr": 19367116.49, "mom": 12.11, "yoy": -5.62}, "2025-08": {"curr": 19085761.47, "mom": -1.45, "yoy": -1.73}, "2025-09": {"curr": 16971973.48, "mom": -11.08, "yoy": -11.88}, "2025-10": {"curr": 20753198.6, "mom": 22.28, "yoy": 5.29}, "2025-11": {"curr": 16640626.12, "mom": -19.82, "yoy": -8.42}, "2025-12": {"curr": 19796269.28, "mom": 18.96, "yoy": 5.44}, "2026-01": {"curr": 14306423.61, "mom": -27.73, "yoy": -14.12}, "2026-02": {"curr": 18232791.3, "mom": 27.44, "yoy": 28.76}}, "BUŽIM": {"2025-03": {"curr": 12341499.43, "mom": 6.37, "yoy": -1.13}, "2025-04": {"curr": 16775003.89, "mom": 35.92, "yoy": 21.53}, "2025-05": {"curr": 14265863.53, "mom": -14.96, "yoy": 4.24}, "2025-06": {"curr": 15016549.39, "mom": 5.26, "yoy": -3.27}, "2025-07": {"curr": 14806901.62, "mom": -1.4, "yoy": -7.11}, "2025-08": {"curr": 17480551.62, "mom": 18.06, "yoy": 16.02}, "2025-09": {"curr": 14510961.53, "mom": -16.99, "yoy": 12.59}, "2025-10": {"curr": 16331974.67, "mom": 12.55, "yoy": 15.87}, "2025-11": {"curr": 15399234.57, "mom": -5.71, "yoy": 5.68}, "2025-12": {"curr": 20736174.14, "mom": 34.66, "yoy": 40.9}, "2026-01": {"curr": 13431998.64, "mom": -35.22, "yoy": 21.83}, "2026-02": {"curr": 12746069.17, "mom": -5.11, "yoy": 9.85}}, "CAZIN": {"2025-03": {"curr": 76498734.8, "mom": 10.57, "yoy": 4.27}, "2025-04": {"curr": 90690338.43, "mom": 18.55, "yoy": 16.74}, "2025-05": {"curr": 86268294.66, "mom": -4.88, "yoy": 0.97}, "2025-06": {"curr": 83806880.36, "mom": -2.85, "yoy": 5.98}, "2025-07": {"curr": 96200362.52, "mom": 14.79, "yoy": -1.58}, "2025-08": {"curr": 101234768.8, "mom": 5.23, "yoy": 0.42}, "2025-09": {"curr": 88127560.84, "mom": -12.95, "yoy": 8.97}, "2025-10": {"curr": 91614399.58, "mom": 3.96, "yoy": 5.84}, "2025-11": {"curr": 82140067.75, "mom": -10.34, "yoy": 2.17}, "2025-12": {"curr": 98232392.97, "mom": 19.59, "yoy": 6.75}, "2026-01": {"curr": 67134419.38, "mom": -31.66, "yoy": -2.96}, "2026-02": {"curr": 75979446.4, "mom": 13.18, "yoy": 9.82}}, "DOBOJ ISTOK": {"2025-03": {"curr": 15364028.83, "mom": 9.12, "yoy": 7.76}, "2025-04": {"curr": 17510214.45, "mom": 13.97, "yoy": 15.11}, "2025-05": {"curr": 17570721.45, "mom": 0.35, "yoy": 14.18}, "2025-06": {"curr": 17908475.06, "mom": 1.92, "yoy": 11.9}, "2025-07": {"curr": 19011303.3, "mom": 6.16, "yoy": -2.91}, "2025-08": {"curr": 17843202.43, "mom": -6.14, "yoy": -2.88}, "2025-09": {"curr": 18590918.25, "mom": 4.19, "yoy": 15.52}, "2025-10": {"curr": 20288778.8, "mom": 9.13, "yoy": 18.7}, "2025-11": {"curr": 16534971.86, "mom": -18.5, "yoy": -0.64}, "2025-12": {"curr": 21197404.35, "mom": 28.2, "yoy": 11.07}, "2026-01": {"curr": 15094781.52, "mom": -28.79, "yoy": 6.55}, "2026-02": {"curr": 17323408.89, "mom": 14.76, "yoy": 23.03}}, "DOBOJ JUG": {"2025-03": {"curr": 29417075.63, "mom": 9.26, "yoy": 16.07}, "2025-04": {"curr": 30665942.37, "mom": 4.25, "yoy": 28.45}, "2025-05": {"curr": 33004266.08, "mom": 7.63, "yoy": 12.63}, "2025-06": {"curr": 31324368.4, "mom": -5.09, "yoy": 9.04}, "2025-07": {"curr": 37469245.25, "mom": 19.62, "yoy": 14.18}, "2025-08": {"curr": 34879374.65, "mom": -6.91, "yoy": 12.18}, "2025-09": {"curr": 32929475.44, "mom": -5.59, "yoy": 12.44}, "2025-10": {"curr": 35703740.14, "mom": 8.42, "yoy": 20.23}, "2025-11": {"curr": 29565515.58, "mom": -17.19, "yoy": -6.88}, "2025-12": {"curr": 37460286.94, "mom": 26.7, "yoy": 26.32}, "2026-01": {"curr": 32906661.39, "mom": -12.16, "yoy": 21.24}, "2026-02": {"curr": 33189712.08, "mom": 0.86, "yoy": 23.28}}, "DOBRETIĆI": {"2025-03": {"curr": 513691.68, "mom": 125.16, "yoy": 184.75}, "2025-04": {"curr": 432999.65, "mom": -15.71, "yoy": 210.09}, "2025-05": {"curr": 51894.55, "mom": -88.02, "yoy": -60.48}, "2025-06": {"curr": 164515.1, "mom": 217.02, "yoy": -13.03}, "2025-07": {"curr": 120212.19, "mom": -26.93, "yoy": -43.34}, "2025-08": {"curr": 119174.64, "mom": -0.86, "yoy": -49.95}, "2025-09": {"curr": 260625.46, "mom": 118.69, "yoy": 67.12}, "2025-10": {"curr": 186692.33, "mom": -28.37, "yoy": 43.44}, "2025-11": {"curr": 209255.77, "mom": 12.09, "yoy": 53.07}, "2025-12": {"curr": 167080.98, "mom": -20.15, "yoy": -6.86}, "2026-01": {"curr": 149797.53, "mom": -10.34, "yoy": 74.76}, "2026-02": {"curr": 198732.21, "mom": 32.67, "yoy": -12.89}}, "DOMALJEVAC/ŠAMAC": {"2025-03": {"curr": 6927572.08, "mom": 11.6, "yoy": 10.82}, "2025-04": {"curr": 7624203.15, "mom": 10.06, "yoy": 16.8}, "2025-05": {"curr": 7865768.24, "mom": 3.17, "yoy": 13.62}, "2025-06": {"curr": 5723538.92, "mom": -27.23, "yoy": -10.92}, "2025-07": {"curr": 7737022.83, "mom": 35.18, "yoy": -2.98}, "2025-08": {"curr": 7186543.81, "mom": -7.11, "yoy": -14.76}, "2025-09": {"curr": 6063278.4, "mom": -15.63, "yoy": -13.82}, "2025-10": {"curr": 6974017.13, "mom": 15.02, "yoy": -29.29}, "2025-11": {"curr": 6448455.6, "mom": -7.54, "yoy": -7.67}, "2025-12": {"curr": 7854555.76, "mom": 21.81, "yoy": -2.67}, "2026-01": {"curr": 5196905.22, "mom": -33.84, "yoy": -3.02}, "2026-02": {"curr": 6481785.64, "mom": 24.72, "yoy": 4.42}}, "DONJI VAKUF": {"2025-03": {"curr": 10663093.85, "mom": -0.73, "yoy": 16.76}, "2025-04": {"curr": 11513666.64, "mom": 7.98, "yoy": 27.52}, "2025-05": {"curr": 10990227.75, "mom": -4.55, "yoy": 2.5}, "2025-06": {"curr": 10863730.86, "mom": -1.15, "yoy": -2.69}, "2025-07": {"curr": 11814876.17, "mom": 8.76, "yoy": 1.06}, "2025-08": {"curr": 12210026.12, "mom": 3.34, "yoy": 6.23}, "2025-09": {"curr": 10930452.9, "mom": -10.48, "yoy": 18.0}, "2025-10": {"curr": 11382431.71, "mom": 4.14, "yoy": 6.69}, "2025-11": {"curr": 11609195.15, "mom": 1.99, "yoy": -8.73}, "2025-12": {"curr": 16336145.53, "mom": 40.72, "yoy": 45.3}, "2026-01": {"curr": 10283198.97, "mom": -37.05, "yoy": 9.67}, "2026-02": {"curr": 10659603.96, "mom": 3.66, "yoy": -0.77}}, "DRVAR": {"2025-03": {"curr": 5724645.37, "mom": 35.66, "yoy": -10.84}, "2025-04": {"curr": 6525928.6, "mom": 14.0, "yoy": -11.48}, "2025-05": {"curr": 6493125.58, "mom": -0.5, "yoy": -4.13}, "2025-06": {"curr": 7583296.15, "mom": 16.79, "yoy": 13.58}, "2025-07": {"curr": 7547478.34, "mom": -0.47, "yoy": 5.68}, "2025-08": {"curr": 8735584.62, "mom": 15.74, "yoy": 19.82}, "2025-09": {"curr": 8719627.05, "mom": -0.18, "yoy": 18.38}, "2025-10": {"curr": 8683714.13, "mom": -0.41, "yoy": 20.07}, "2025-11": {"curr": 7628432.49, "mom": -12.15, "yoy": 6.7}, "2025-12": {"curr": 7561155.82, "mom": -0.88, "yoy": 27.91}, "2026-01": {"curr": 4029081.74, "mom": -46.71, "yoy": 8.07}, "2026-02": {"curr": 5449269.95, "mom": 35.25, "yoy": 29.13}}, "FOJNICA": {"2025-03": {"curr": 9658607.88, "mom": 2.44, "yoy": 14.3}, "2025-04": {"curr": 11376643.62, "mom": 17.79, "yoy": 21.36}, "2025-05": {"curr": 10532331.39, "mom": -7.42, "yoy": 6.53}, "2025-06": {"curr": 9687873.76, "mom": -8.02, "yoy": -0.04}, "2025-07": {"curr": 10456481.83, "mom": 7.93, "yoy": -1.38}, "2025-08": {"curr": 9272359.25, "mom": -11.32, "yoy": -14.91}, "2025-09": {"curr": 9700816.63, "mom": 4.62, "yoy": 7.7}, "2025-10": {"curr": 9587955.13, "mom": -1.16, "yoy": 1.79}, "2025-11": {"curr": 8301943.68, "mom": -13.41, "yoy": -16.19}, "2025-12": {"curr": 12698283.3, "mom": 52.96, "yoy": 13.38}, "2026-01": {"curr": 7313102.45, "mom": -42.41, "yoy": -19.98}, "2026-02": {"curr": 8503161.47, "mom": 16.27, "yoy": -9.81}}, "FOČA": {"2025-03": {"curr": 537249.67, "mom": 14.55, "yoy": 25.35}, "2025-04": {"curr": 580871.9, "mom": 8.12, "yoy": 17.85}, "2025-05": {"curr": 600384.51, "mom": 3.36, "yoy": 10.82}, "2025-06": {"curr": 736601.88, "mom": 22.69, "yoy": 29.9}, "2025-07": {"curr": 727767.25, "mom": -1.2, "yoy": 34.34}, "2025-08": {"curr": 761719.54, "mom": 4.67, "yoy": 30.77}, "2025-09": {"curr": 603373.49, "mom": -20.79, "yoy": 19.54}, "2025-10": {"curr": 584153.63, "mom": -3.19, "yoy": 8.71}, "2025-11": {"curr": 515417.04, "mom": -11.77, "yoy": 11.14}, "2025-12": {"curr": 831364.72, "mom": 61.3, "yoy": 46.19}, "2026-01": {"curr": 497561.67, "mom": -40.15, "yoy": 13.52}, "2026-02": {"curr": 488896.54, "mom": -1.74, "yoy": 4.24}}, "GLAMOČ": {"2025-03": {"curr": 5329230.22, "mom": 68.06, "yoy": 14.43}, "2025-04": {"curr": 5462032.6, "mom": 2.49, "yoy": 17.09}, "2025-05": {"curr": 4933762.75, "mom": -9.67, "yoy": -23.77}, "2025-06": {"curr": 5286477.62, "mom": 7.15, "yoy": 2.2}, "2025-07": {"curr": 6177160.32, "mom": 16.85, "yoy": -6.23}, "2025-08": {"curr": 5777226.3, "mom": -6.47, "yoy": -1.9}, "2025-09": {"curr": 6938658.21, "mom": 20.1, "yoy": 1.13}, "2025-10": {"curr": 6153855.03, "mom": -11.31, "yoy": 30.65}, "2025-11": {"curr": 4354630.52, "mom": -29.24, "yoy": -22.36}, "2025-12": {"curr": 3746010.05, "mom": -13.98, "yoy": 12.27}, "2026-01": {"curr": 2087057.35, "mom": -44.29, "yoy": -12.21}, "2026-02": {"curr": 2885400.95, "mom": 38.25, "yoy": -9.01}}, "GORAŽDE": {"2025-03": {"curr": 41393097.85, "mom": 11.03, "yoy": 10.89}, "2025-04": {"curr": 42514163.18, "mom": 2.71, "yoy": 13.68}, "2025-05": {"curr": 37131872.22, "mom": -12.66, "yoy": -10.07}, "2025-06": {"curr": 37587566.41, "mom": 1.23, "yoy": -2.2}, "2025-07": {"curr": 42710583.32, "mom": 13.63, "yoy": -2.28}, "2025-08": {"curr": 35213132.73, "mom": -17.55, "yoy": -8.75}, "2025-09": {"curr": 40944144.87, "mom": 16.28, "yoy": 0.84}, "2025-10": {"curr": 37362239.09, "mom": -8.75, "yoy": -16.07}, "2025-11": {"curr": 38849826.72, "mom": 3.98, "yoy": -7.44}, "2025-12": {"curr": 47062982.03, "mom": 21.14, "yoy": 22.91}, "2026-01": {"curr": 36398644.09, "mom": -22.66, "yoy": 14.49}, "2026-02": {"curr": 38377086.85, "mom": 5.44, "yoy": 2.94}}, "GORNJI VAKUF-USKOPLJE": {"2025-03": {"curr": 19380215.5, "mom": 3.97, "yoy": 4.6}, "2025-04": {"curr": 22371807.78, "mom": 15.44, "yoy": 22.67}, "2025-05": {"curr": 22468061.4, "mom": 0.43, "yoy": 7.44}, "2025-06": {"curr": 21098888.26, "mom": -6.09, "yoy": 9.13}, "2025-07": {"curr": 22002705.6, "mom": 4.28, "yoy": 4.25}, "2025-08": {"curr": 25654206.0, "mom": 16.6, "yoy": 8.29}, "2025-09": {"curr": 21327358.66, "mom": -16.87, "yoy": -0.07}, "2025-10": {"curr": 22602060.0, "mom": 5.98, "yoy": 7.18}, "2025-11": {"curr": 19310242.85, "mom": -14.56, "yoy": -8.64}, "2025-12": {"curr": 21851256.8, "mom": 13.16, "yoy": -7.74}, "2026-01": {"curr": 17654555.08, "mom": -19.21, "yoy": -14.29}, "2026-02": {"curr": 17062281.73, "mom": -3.35, "yoy": -8.47}}, "GRADAČAC": {"2025-03": {"curr": 119047323.86, "mom": 11.12, "yoy": 3.92}, "2025-04": {"curr": 123162585.3, "mom": 3.46, "yoy": 11.52}, "2025-05": {"curr": 115988431.42, "mom": -5.82, "yoy": 0.4}, "2025-06": {"curr": 109052899.86, "mom": -5.98, "yoy": 2.24}, "2025-07": {"curr": 122630087.11, "mom": 12.45, "yoy": 4.53}, "2025-08": {"curr": 104584541.68, "mom": -14.72, "yoy": -6.1}, "2025-09": {"curr": 119891114.04, "mom": 14.64, "yoy": 10.38}, "2025-10": {"curr": 127708449.13, "mom": 6.52, "yoy": 8.55}, "2025-11": {"curr": 100163679.46, "mom": -21.57, "yoy": -12.6}, "2025-12": {"curr": 121994091.35, "mom": 21.79, "yoy": 8.75}, "2026-01": {"curr": 98285201.48, "mom": -19.43, "yoy": -7.16}, "2026-02": {"curr": 113044699.7, "mom": 15.02, "yoy": 5.52}}, "GRAČANICA": {"2025-03": {"curr": 116593895.07, "mom": 3.48, "yoy": 4.24}, "2025-04": {"curr": 122078015.48, "mom": 4.7, "yoy": 11.18}, "2025-05": {"curr": 120017487.85, "mom": -1.69, "yoy": -0.91}, "2025-06": {"curr": 112871172.62, "mom": -5.95, "yoy": -0.71}, "2025-07": {"curr": 126570487.89, "mom": 12.14, "yoy": 2.54}, "2025-08": {"curr": 120099972.35, "mom": -5.11, "yoy": 7.76}, "2025-09": {"curr": 120585046.91, "mom": 0.4, "yoy": 14.07}, "2025-10": {"curr": 129412593.54, "mom": 7.32, "yoy": 13.91}, "2025-11": {"curr": 102455098.72, "mom": -20.83, "yoy": -11.38}, "2025-12": {"curr": 133673063.15, "mom": 30.47, "yoy": 22.64}, "2026-01": {"curr": 95001537.45, "mom": -28.93, "yoy": -2.96}, "2026-02": {"curr": 115584861.52, "mom": 21.67, "yoy": 2.58}}, "GRUDE": {"2025-03": {"curr": 78164168.55, "mom": 7.54, "yoy": 12.1}, "2025-04": {"curr": 84465216.84, "mom": 8.06, "yoy": 9.77}, "2025-05": {"curr": 81162861.8, "mom": -3.91, "yoy": 8.2}, "2025-06": {"curr": 72650845.31, "mom": -10.49, "yoy": -0.0}, "2025-07": {"curr": 84548084.06, "mom": 16.38, "yoy": 2.3}, "2025-08": {"curr": 77418480.6, "mom": -8.43, "yoy": -3.87}, "2025-09": {"curr": 85566254.08, "mom": 10.52, "yoy": 7.68}, "2025-10": {"curr": 89143990.27, "mom": 4.18, "yoy": 6.32}, "2025-11": {"curr": 64675962.5, "mom": -27.45, "yoy": -16.48}, "2025-12": {"curr": 87246902.45, "mom": 34.9, "yoy": 5.93}, "2026-01": {"curr": 75283059.56, "mom": -13.71, "yoy": 5.73}, "2026-02": {"curr": 76826183.29, "mom": 2.05, "yoy": 5.7}}, "HADŽIĆI": {"2025-03": {"curr": 132483632.13, "mom": 7.57, "yoy": 39.69}, "2025-04": {"curr": 150476997.58, "mom": 13.58, "yoy": 50.25}, "2025-05": {"curr": 145421044.12, "mom": -3.36, "yoy": 30.15}, "2025-06": {"curr": 147664863.73, "mom": 1.54, "yoy": 38.98}, "2025-07": {"curr": 164654232.34, "mom": 11.51, "yoy": 14.39}, "2025-08": {"curr": 147983858.12, "mom": -10.12, "yoy": 11.55}, "2025-09": {"curr": 133944256.41, "mom": -9.49, "yoy": 11.29}, "2025-10": {"curr": 157884052.8, "mom": 17.87, "yoy": 24.92}, "2025-11": {"curr": 123742388.97, "mom": -21.62, "yoy": 1.81}, "2025-12": {"curr": 151476662.96, "mom": 22.41, "yoy": 25.64}, "2026-01": {"curr": 113905829.19, "mom": -24.8, "yoy": 14.9}, "2026-02": {"curr": 139561013.26, "mom": 22.52, "yoy": 13.32}}, "ILIDŽA": {"2025-03": {"curr": 447799990.49, "mom": 7.91, "yoy": 13.25}, "2025-04": {"curr": 480211020.02, "mom": 7.24, "yoy": 16.09}, "2025-05": {"curr": 490363826.3, "mom": 2.11, "yoy": 2.07}, "2025-06": {"curr": 490558581.24, "mom": 0.04, "yoy": 6.69}, "2025-07": {"curr": 532592991.27, "mom": 8.57, "yoy": 2.45}, "2025-08": {"curr": 479284476.67, "mom": -10.01, "yoy": -5.07}, "2025-09": {"curr": 514571113.48, "mom": 7.36, "yoy": 9.43}, "2025-10": {"curr": 533439297.69, "mom": 3.67, "yoy": 9.68}, "2025-11": {"curr": 446306777.21, "mom": -16.33, "yoy": -3.21}, "2025-12": {"curr": 581183568.93, "mom": 30.22, "yoy": 12.39}, "2026-01": {"curr": 381104121.59, "mom": -34.43, "yoy": -7.28}, "2026-02": {"curr": 446720245.2, "mom": 17.22, "yoy": 7.65}}, "ILIJAŠ": {"2025-03": {"curr": 64152677.11, "mom": 4.16, "yoy": -7.08}, "2025-04": {"curr": 64192988.55, "mom": 0.06, "yoy": -9.96}, "2025-05": {"curr": 65542221.51, "mom": 2.1, "yoy": 2.0}, "2025-06": {"curr": 65828293.23, "mom": 0.44, "yoy": 1.49}, "2025-07": {"curr": 69265975.45, "mom": 5.22, "yoy": -6.02}, "2025-08": {"curr": 62068509.59, "mom": -10.39, "yoy": 11.65}, "2025-09": {"curr": 67614932.74, "mom": 8.94, "yoy": 11.86}, "2025-10": {"curr": 73367106.17, "mom": 8.51, "yoy": 16.8}, "2025-11": {"curr": 63415029.37, "mom": -13.56, "yoy": 12.68}, "2025-12": {"curr": 73112729.47, "mom": 15.29, "yoy": 15.74}, "2026-01": {"curr": 65387332.53, "mom": -10.57, "yoy": 25.84}, "2026-02": {"curr": 70122861.74, "mom": 7.24, "yoy": 13.85}}, "JABLANICA": {"2025-03": {"curr": 7971302.0, "mom": 0.17, "yoy": 5.72}, "2025-04": {"curr": 9005978.82, "mom": 12.98, "yoy": 13.77}, "2025-05": {"curr": 10322936.99, "mom": 14.62, "yoy": 21.87}, "2025-06": {"curr": 9522295.91, "mom": -7.76, "yoy": 7.85}, "2025-07": {"curr": 12428999.2, "mom": 30.53, "yoy": 17.83}, "2025-08": {"curr": 11692837.36, "mom": -5.92, "yoy": 8.23}, "2025-09": {"curr": 9915513.66, "mom": -15.2, "yoy": 22.63}, "2025-10": {"curr": 11918335.59, "mom": 20.2, "yoy": 33.49}, "2025-11": {"curr": 7886131.33, "mom": -33.83, "yoy": -4.19}, "2025-12": {"curr": 11552031.26, "mom": 46.49, "yoy": 25.97}, "2026-01": {"curr": 7923347.02, "mom": -31.41, "yoy": 24.18}, "2026-02": {"curr": 8358920.22, "mom": 5.5, "yoy": 5.04}}, "JAJCE": {"2025-03": {"curr": 34048551.06, "mom": 7.35, "yoy": 3.53}, "2025-04": {"curr": 35406391.21, "mom": 3.99, "yoy": 6.8}, "2025-05": {"curr": 36956104.67, "mom": 4.38, "yoy": 3.87}, "2025-06": {"curr": 35825664.91, "mom": -3.06, "yoy": -6.86}, "2025-07": {"curr": 47220806.71, "mom": 31.81, "yoy": 6.78}, "2025-08": {"curr": 50001693.53, "mom": 5.89, "yoy": 11.98}, "2025-09": {"curr": 44681641.43, "mom": -10.64, "yoy": -2.96}, "2025-10": {"curr": 51055094.26, "mom": 14.26, "yoy": 2.87}, "2025-11": {"curr": 38506946.09, "mom": -24.58, "yoy": -7.7}, "2025-12": {"curr": 45670685.48, "mom": 18.6, "yoy": 21.58}, "2026-01": {"curr": 30379170.09, "mom": -33.48, "yoy": 4.35}, "2026-02": {"curr": 40078748.64, "mom": 31.93, "yoy": 26.37}}, "KAKANJ": {"2025-03": {"curr": 67210510.82, "mom": 10.13, "yoy": 19.26}, "2025-04": {"curr": 73876248.09, "mom": 9.92, "yoy": 28.95}, "2025-05": {"curr": 74094174.64, "mom": 0.29, "yoy": 20.55}, "2025-06": {"curr": 71020964.37, "mom": -4.15, "yoy": 21.0}, "2025-07": {"curr": 69058924.37, "mom": -2.76, "yoy": 6.72}, "2025-08": {"curr": 72756562.71, "mom": 5.35, "yoy": 18.31}, "2025-09": {"curr": 75360791.79, "mom": 3.58, "yoy": 31.45}, "2025-10": {"curr": 76030297.54, "mom": 0.89, "yoy": 17.82}, "2025-11": {"curr": 62533662.97, "mom": -17.75, "yoy": 10.24}, "2025-12": {"curr": 81525273.72, "mom": 30.37, "yoy": 33.24}, "2026-01": {"curr": 52212589.96, "mom": -35.96, "yoy": -10.41}, "2026-02": {"curr": 64974049.73, "mom": 24.44, "yoy": 6.47}}, "KALESIJA": {"2025-03": {"curr": 39746771.34, "mom": 9.68, "yoy": 7.84}, "2025-04": {"curr": 42207017.36, "mom": 6.19, "yoy": 11.29}, "2025-05": {"curr": 41389163.61, "mom": -1.94, "yoy": 1.04}, "2025-06": {"curr": 39981830.26, "mom": -3.4, "yoy": 1.35}, "2025-07": {"curr": 43901789.15, "mom": 9.8, "yoy": 0.43}, "2025-08": {"curr": 46321472.46, "mom": 5.51, "yoy": -2.34}, "2025-09": {"curr": 44819724.69, "mom": -3.24, "yoy": 7.34}, "2025-10": {"curr": 46287806.56, "mom": 3.28, "yoy": 2.47}, "2025-11": {"curr": 38257650.18, "mom": -17.35, "yoy": -8.5}, "2025-12": {"curr": 49238051.71, "mom": 28.7, "yoy": 21.21}, "2026-01": {"curr": 35213703.53, "mom": -28.48, "yoy": -2.25}, "2026-02": {"curr": 39994639.28, "mom": 13.58, "yoy": 10.37}}, "KISELJAK": {"2025-03": {"curr": 50116170.64, "mom": -0.86, "yoy": 2.42}, "2025-04": {"curr": 59297806.37, "mom": 18.32, "yoy": 19.5}, "2025-05": {"curr": 57303105.63, "mom": -3.36, "yoy": -1.74}, "2025-06": {"curr": 56400341.8, "mom": -1.58, "yoy": 5.15}, "2025-07": {"curr": 67981297.58, "mom": 20.53, "yoy": -24.48}, "2025-08": {"curr": 58724737.63, "mom": -13.62, "yoy": -25.68}, "2025-09": {"curr": 61254300.68, "mom": 4.31, "yoy": 1.39}, "2025-10": {"curr": 55582535.51, "mom": -9.26, "yoy": -6.49}, "2025-11": {"curr": 50590978.4, "mom": -8.98, "yoy": -10.01}, "2025-12": {"curr": 60396797.6, "mom": 19.38, "yoy": 2.31}, "2026-01": {"curr": 42494001.31, "mom": -29.64, "yoy": -5.73}, "2026-02": {"curr": 45428624.49, "mom": 6.91, "yoy": -10.13}}, "KLADANJ": {"2025-03": {"curr": 8484198.52, "mom": 14.21, "yoy": 10.72}, "2025-04": {"curr": 8670874.14, "mom": 2.2, "yoy": 19.41}, "2025-05": {"curr": 8479774.78, "mom": -2.2, "yoy": 17.4}, "2025-06": {"curr": 7845458.15, "mom": -7.48, "yoy": 3.26}, "2025-07": {"curr": 9072311.41, "mom": 15.64, "yoy": 5.46}, "2025-08": {"curr": 8763552.01, "mom": -3.4, "yoy": 0.86}, "2025-09": {"curr": 8926970.81, "mom": 1.86, "yoy": 22.25}, "2025-10": {"curr": 9132265.01, "mom": 2.3, "yoy": 12.05}, "2025-11": {"curr": 8084597.67, "mom": -11.47, "yoy": 4.45}, "2025-12": {"curr": 10778804.23, "mom": 33.33, "yoy": 30.41}, "2026-01": {"curr": 6897655.01, "mom": -36.01, "yoy": -0.9}, "2026-02": {"curr": 7316877.68, "mom": 6.08, "yoy": -1.5}}, "KLJUČ": {"2025-03": {"curr": 9327547.67, "mom": 6.61, "yoy": 12.69}, "2025-04": {"curr": 10876217.38, "mom": 16.6, "yoy": 24.5}, "2025-05": {"curr": 9975919.72, "mom": -8.28, "yoy": 3.04}, "2025-06": {"curr": 9595752.26, "mom": -3.81, "yoy": 1.3}, "2025-07": {"curr": 13397641.01, "mom": 39.62, "yoy": 6.69}, "2025-08": {"curr": 13215762.41, "mom": -1.36, "yoy": 9.21}, "2025-09": {"curr": 10274583.54, "mom": -22.26, "yoy": 30.38}, "2025-10": {"curr": 10804448.83, "mom": 5.16, "yoy": 11.98}, "2025-11": {"curr": 9239018.76, "mom": -14.49, "yoy": 7.89}, "2025-12": {"curr": 12518617.74, "mom": 35.5, "yoy": 20.29}, "2026-01": {"curr": 7953937.08, "mom": -36.46, "yoy": 1.46}, "2026-02": {"curr": 8601649.02, "mom": 8.14, "yoy": -1.68}}, "KONJIC": {"2025-03": {"curr": 38205943.27, "mom": 2.64, "yoy": -6.86}, "2025-04": {"curr": 41670568.9, "mom": 9.07, "yoy": 11.13}, "2025-05": {"curr": 41160341.77, "mom": -1.22, "yoy": -9.7}, "2025-06": {"curr": 41939205.46, "mom": 1.89, "yoy": 0.93}, "2025-07": {"curr": 41104151.61, "mom": -1.99, "yoy": -13.66}, "2025-08": {"curr": 39426198.22, "mom": -4.08, "yoy": 3.81}, "2025-09": {"curr": 44161057.72, "mom": 12.01, "yoy": 7.84}, "2025-10": {"curr": 48611973.69, "mom": 10.08, "yoy": 13.2}, "2025-11": {"curr": 38740590.53, "mom": -20.31, "yoy": 2.42}, "2025-12": {"curr": 47507396.34, "mom": 22.63, "yoy": 11.99}, "2026-01": {"curr": 40955687.53, "mom": -13.79, "yoy": 17.11}, "2026-02": {"curr": 34247073.84, "mom": -16.38, "yoy": -7.99}}, "KREŠEVO": {"2025-03": {"curr": 28253564.3, "mom": 14.6, "yoy": 10.54}, "2025-04": {"curr": 28764103.11, "mom": 1.81, "yoy": -2.36}, "2025-05": {"curr": 32914541.95, "mom": 14.43, "yoy": 9.7}, "2025-06": {"curr": 28197634.22, "mom": -14.33, "yoy": 14.1}, "2025-07": {"curr": 37468928.6, "mom": 32.88, "yoy": 8.77}, "2025-08": {"curr": 31314364.48, "mom": -16.43, "yoy": -9.65}, "2025-09": {"curr": 30610031.22, "mom": -2.25, "yoy": 13.77}, "2025-10": {"curr": 32995913.88, "mom": 7.79, "yoy": 10.19}, "2025-11": {"curr": 27113904.51, "mom": -17.83, "yoy": -3.65}, "2025-12": {"curr": 30525538.59, "mom": 12.58, "yoy": 21.81}, "2026-01": {"curr": 22854016.78, "mom": -25.13, "yoy": 1.46}, "2026-02": {"curr": 27999466.03, "mom": 22.51, "yoy": 13.57}}, "KUPRES": {"2025-03": {"curr": 2816055.79, "mom": -1.38, "yoy": -16.97}, "2025-04": {"curr": 3674379.18, "mom": 30.48, "yoy": 20.19}, "2025-05": {"curr": 3320259.16, "mom": -9.64, "yoy": 10.49}, "2025-06": {"curr": 5112584.82, "mom": 53.98, "yoy": 6.89}, "2025-07": {"curr": 5838697.32, "mom": 14.2, "yoy": 0.67}, "2025-08": {"curr": 6168768.43, "mom": 5.65, "yoy": -10.45}, "2025-09": {"curr": 5217951.05, "mom": -15.41, "yoy": 2.02}, "2025-10": {"curr": 4594331.82, "mom": -11.95, "yoy": 25.8}, "2025-11": {"curr": 4953591.47, "mom": 7.82, "yoy": 17.72}, "2025-12": {"curr": 5015310.26, "mom": 1.25, "yoy": 8.85}, "2026-01": {"curr": 4160385.18, "mom": -17.05, "yoy": -0.16}, "2026-02": {"curr": 3046177.43, "mom": -26.78, "yoy": 6.67}}, "LIVNO": {"2025-03": {"curr": 30473500.98, "mom": 14.5, "yoy": 3.25}, "2025-04": {"curr": 34888176.15, "mom": 14.49, "yoy": 26.76}, "2025-05": {"curr": 35569590.91, "mom": 1.95, "yoy": 7.18}, "2025-06": {"curr": 36951156.78, "mom": 3.88, "yoy": 7.29}, "2025-07": {"curr": 38642880.39, "mom": 4.58, "yoy": -4.34}, "2025-08": {"curr": 44101180.32, "mom": 14.12, "yoy": 3.28}, "2025-09": {"curr": 46259137.59, "mom": 4.89, "yoy": 34.78}, "2025-10": {"curr": 39759395.91, "mom": -14.05, "yoy": 7.65}, "2025-11": {"curr": 33175065.23, "mom": -16.56, "yoy": -9.94}, "2025-12": {"curr": 42555083.27, "mom": 28.27, "yoy": 8.65}, "2026-01": {"curr": 29116951.52, "mom": -31.58, "yoy": 8.06}, "2026-02": {"curr": 30979507.33, "mom": 6.4, "yoy": 16.4}}, "LJUBUŠKI": {"2025-03": {"curr": 79635576.21, "mom": 12.87, "yoy": 20.79}, "2025-04": {"curr": 88088370.77, "mom": 10.61, "yoy": 30.26}, "2025-05": {"curr": 84751751.67, "mom": -3.79, "yoy": 13.49}, "2025-06": {"curr": 79378578.25, "mom": -6.34, "yoy": 22.07}, "2025-07": {"curr": 96664300.05, "mom": 21.78, "yoy": 20.09}, "2025-08": {"curr": 83289285.69, "mom": -13.84, "yoy": 2.74}, "2025-09": {"curr": 91678226.23, "mom": 10.07, "yoy": 21.0}, "2025-10": {"curr": 102322903.17, "mom": 11.61, "yoy": 13.94}, "2025-11": {"curr": 82779954.79, "mom": -19.1, "yoy": -4.33}, "2025-12": {"curr": 94658976.86, "mom": 14.35, "yoy": 10.72}, "2026-01": {"curr": 63636997.92, "mom": -32.77, "yoy": 0.16}, "2026-02": {"curr": 69269422.39, "mom": 8.85, "yoy": -1.82}}, "LUKAVAC": {"2025-03": {"curr": 161573795.58, "mom": 20.99, "yoy": 24.74}, "2025-04": {"curr": 151961553.86, "mom": -5.95, "yoy": 17.91}, "2025-05": {"curr": 162167438.39, "mom": 6.72, "yoy": 8.12}, "2025-06": {"curr": 142457035.37, "mom": -12.15, "yoy": -4.79}, "2025-07": {"curr": 153513237.47, "mom": 7.76, "yoy": -1.63}, "2025-08": {"curr": 135977370.58, "mom": -11.42, "yoy": -1.86}, "2025-09": {"curr": 152784137.35, "mom": 12.36, "yoy": 10.67}, "2025-10": {"curr": 149173059.31, "mom": -2.36, "yoy": -0.64}, "2025-11": {"curr": 116608563.33, "mom": -21.83, "yoy": -27.27}, "2025-12": {"curr": 148053171.38, "mom": 26.97, "yoy": -4.88}, "2026-01": {"curr": 105973696.45, "mom": -28.42, "yoy": -24.94}, "2026-02": {"curr": 122225094.73, "mom": 15.34, "yoy": -8.47}}, "MAGLAJ": {"2025-03": {"curr": 42990745.09, "mom": 20.01, "yoy": 12.36}, "2025-04": {"curr": 38367414.69, "mom": -10.75, "yoy": 4.87}, "2025-05": {"curr": 36115719.07, "mom": -5.87, "yoy": -5.71}, "2025-06": {"curr": 36907010.42, "mom": 2.19, "yoy": 5.24}, "2025-07": {"curr": 39271225.0, "mom": 6.41, "yoy": 11.55}, "2025-08": {"curr": 37445244.24, "mom": -4.65, "yoy": 7.94}, "2025-09": {"curr": 38671310.8, "mom": 3.27, "yoy": 13.88}, "2025-10": {"curr": 40291886.03, "mom": 4.19, "yoy": -3.2}, "2025-11": {"curr": 35366331.34, "mom": -12.22, "yoy": 2.07}, "2025-12": {"curr": 39032050.28, "mom": 10.36, "yoy": 6.06}, "2026-01": {"curr": 32140413.09, "mom": -17.66, "yoy": -6.85}, "2026-02": {"curr": 34992742.33, "mom": 8.87, "yoy": -2.31}}, "MOSTAR": {"2025-03": {"curr": 312598234.28, "mom": 12.46, "yoy": 10.04}, "2025-04": {"curr": 338534664.36, "mom": 8.3, "yoy": 17.92}, "2025-05": {"curr": 341897092.2, "mom": 0.99, "yoy": 8.98}, "2025-06": {"curr": 340878159.07, "mom": -0.3, "yoy": 13.72}, "2025-07": {"curr": 396703598.24, "mom": 16.38, "yoy": 14.64}, "2025-08": {"curr": 336502952.18, "mom": -15.18, "yoy": 4.54}, "2025-09": {"curr": 355790935.44, "mom": 5.73, "yoy": 14.61}, "2025-10": {"curr": 368327583.89, "mom": 3.52, "yoy": 12.64}, "2025-11": {"curr": 319336362.31, "mom": -13.3, "yoy": 3.85}, "2025-12": {"curr": 411759791.85, "mom": 28.94, "yoy": 22.16}, "2026-01": {"curr": 289493732.24, "mom": -29.69, "yoy": 11.94}, "2026-02": {"curr": 306418942.01, "mom": 5.85, "yoy": 10.24}}, "NEUM": {"2025-03": {"curr": 3642138.21, "mom": 19.35, "yoy": -2.91}, "2025-04": {"curr": 5395602.36, "mom": 48.14, "yoy": 4.28}, "2025-05": {"curr": 8944664.39, "mom": 65.78, "yoy": 1.93}, "2025-06": {"curr": 13074054.82, "mom": 46.17, "yoy": -0.33}, "2025-07": {"curr": 19141975.31, "mom": 46.41, "yoy": -5.94}, "2025-08": {"curr": 21528021.11, "mom": 12.46, "yoy": -5.64}, "2025-09": {"curr": 13733328.9, "mom": -36.21, "yoy": 8.52}, "2025-10": {"curr": 8715822.22, "mom": -36.54, "yoy": 14.03}, "2025-11": {"curr": 4552028.74, "mom": -47.77, "yoy": 18.06}, "2025-12": {"curr": 5596541.44, "mom": 22.95, "yoy": 20.28}, "2026-01": {"curr": 3406870.5, "mom": -39.13, "yoy": -9.77}, "2026-02": {"curr": 3215698.07, "mom": -5.61, "yoy": 5.38}}, "NOVI GRAD SARAJEVO": {"2025-03": {"curr": 444003927.66, "mom": 10.88, "yoy": 6.55}, "2025-04": {"curr": 470322498.12, "mom": 5.93, "yoy": 15.37}, "2025-05": {"curr": 468462774.26, "mom": -0.4, "yoy": 6.05}, "2025-06": {"curr": 466104764.17, "mom": -0.5, "yoy": 8.7}, "2025-07": {"curr": 496383937.25, "mom": 6.5, "yoy": 9.39}, "2025-08": {"curr": 458856306.04, "mom": -7.56, "yoy": -2.49}, "2025-09": {"curr": 488874393.2, "mom": 6.54, "yoy": 14.95}, "2025-10": {"curr": 523177720.44, "mom": 7.02, "yoy": 18.32}, "2025-11": {"curr": 445170063.25, "mom": -14.91, "yoy": 5.07}, "2025-12": {"curr": 562041799.8, "mom": 26.25, "yoy": 13.71}, "2026-01": {"curr": 421787300.59, "mom": -24.95, "yoy": 9.01}, "2026-02": {"curr": 446929576.66, "mom": 5.96, "yoy": 11.61}}, "NOVI TRAVNIK": {"2025-03": {"curr": 27014707.24, "mom": 9.36, "yoy": 25.16}, "2025-04": {"curr": 26826481.42, "mom": -0.7, "yoy": 24.27}, "2025-05": {"curr": 26934446.22, "mom": 0.4, "yoy": 20.31}, "2025-06": {"curr": 25873445.25, "mom": -3.94, "yoy": 9.77}, "2025-07": {"curr": 27292675.15, "mom": 5.49, "yoy": 4.94}, "2025-08": {"curr": 24895127.22, "mom": -8.78, "yoy": 9.75}, "2025-09": {"curr": 27292399.91, "mom": 9.63, "yoy": 12.68}, "2025-10": {"curr": 27832529.11, "mom": 1.98, "yoy": 11.16}, "2025-11": {"curr": 25041241.24, "mom": -10.03, "yoy": 0.9}, "2025-12": {"curr": 30670490.03, "mom": 22.48, "yoy": 16.6}, "2026-01": {"curr": 24874263.7, "mom": -18.9, "yoy": 10.76}, "2026-02": {"curr": 26520786.12, "mom": 6.62, "yoy": 7.36}}, "NOVO SARAJEVO": {"2025-03": {"curr": 204850400.53, "mom": 9.3, "yoy": 11.88}, "2025-04": {"curr": 231235964.12, "mom": 12.88, "yoy": 24.44}, "2025-05": {"curr": 229485734.26, "mom": -0.76, "yoy": 13.0}, "2025-06": {"curr": 222681649.69, "mom": -2.96, "yoy": 5.33}, "2025-07": {"curr": 231102106.26, "mom": 3.78, "yoy": 2.27}, "2025-08": {"curr": 220631709.2, "mom": -4.53, "yoy": 5.88}, "2025-09": {"curr": 213676689.67, "mom": -3.15, "yoy": 6.41}, "2025-10": {"curr": 263452943.28, "mom": 23.3, "yoy": 11.1}, "2025-11": {"curr": 211244981.88, "mom": -19.82, "yoy": 1.41}, "2025-12": {"curr": 297726367.29, "mom": 40.94, "yoy": 3.96}, "2026-01": {"curr": 197184540.78, "mom": -33.77, "yoy": 0.34}, "2026-02": {"curr": 198116702.9, "mom": 0.47, "yoy": 5.7}}, "ODŽAK": {"2025-03": {"curr": 29346973.62, "mom": 4.2, "yoy": -3.89}, "2025-04": {"curr": 32474279.7, "mom": 10.66, "yoy": 11.24}, "2025-05": {"curr": 31125217.07, "mom": -4.15, "yoy": -7.57}, "2025-06": {"curr": 28276189.84, "mom": -9.15, "yoy": -4.1}, "2025-07": {"curr": 31936246.13, "mom": 12.94, "yoy": -1.43}, "2025-08": {"curr": 29378286.43, "mom": -8.01, "yoy": 3.46}, "2025-09": {"curr": 29139776.73, "mom": -0.81, "yoy": -9.12}, "2025-10": {"curr": 37953916.65, "mom": 30.25, "yoy": 3.8}, "2025-11": {"curr": 29480265.59, "mom": -22.33, "yoy": 3.34}, "2025-12": {"curr": 30510406.81, "mom": 3.49, "yoy": 8.71}, "2026-01": {"curr": 27280499.2, "mom": -10.59, "yoy": -3.86}, "2026-02": {"curr": 31339700.31, "mom": 14.88, "yoy": 11.27}}, "OLOVO": {"2025-03": {"curr": 8376953.46, "mom": -0.26, "yoy": 1.89}, "2025-04": {"curr": 9730591.45, "mom": 16.16, "yoy": 21.79}, "2025-05": {"curr": 10083323.61, "mom": 3.62, "yoy": 8.89}, "2025-06": {"curr": 8466071.86, "mom": -16.04, "yoy": -13.35}, "2025-07": {"curr": 10036518.71, "mom": 18.55, "yoy": 4.13}, "2025-08": {"curr": 10933739.9, "mom": 8.94, "yoy": 15.54}, "2025-09": {"curr": 9879666.78, "mom": -9.64, "yoy": 5.55}, "2025-10": {"curr": 9617209.13, "mom": -2.66, "yoy": 11.26}, "2025-11": {"curr": 7916882.83, "mom": -17.68, "yoy": -5.18}, "2025-12": {"curr": 8930686.91, "mom": 12.81, "yoy": -3.85}, "2026-01": {"curr": 7005532.96, "mom": -21.56, "yoy": -9.03}, "2026-02": {"curr": 8433843.71, "mom": 20.39, "yoy": 0.42}}, "ORAŠJE": {"2025-03": {"curr": 64328898.58, "mom": 4.74, "yoy": 64.99}, "2025-04": {"curr": 65718473.74, "mom": 2.16, "yoy": 95.07}, "2025-05": {"curr": 57697261.26, "mom": -12.21, "yoy": 61.19}, "2025-06": {"curr": 67739028.48, "mom": 17.4, "yoy": 85.45}, "2025-07": {"curr": 69374823.77, "mom": 2.41, "yoy": 58.34}, "2025-08": {"curr": 70236395.72, "mom": 1.24, "yoy": 80.34}, "2025-09": {"curr": 66849606.86, "mom": -4.82, "yoy": 106.34}, "2025-10": {"curr": 80372687.76, "mom": 20.23, "yoy": 8.72}, "2025-11": {"curr": 49982083.12, "mom": -37.81, "yoy": -26.53}, "2025-12": {"curr": 75025883.67, "mom": 50.11, "yoy": 3.49}, "2026-01": {"curr": 55465431.04, "mom": -26.07, "yoy": -20.05}, "2026-02": {"curr": 59944544.65, "mom": 8.08, "yoy": -2.4}}, "PALE": {"2025-03": {"curr": 150211.27, "mom": -36.84, "yoy": -8.9}, "2025-04": {"curr": 327276.06, "mom": 117.88, "yoy": 70.99}, "2025-05": {"curr": 356398.74, "mom": 8.9, "yoy": 86.78}, "2025-06": {"curr": 262649.78, "mom": -26.3, "yoy": 23.04}, "2025-07": {"curr": 247878.61, "mom": -5.62, "yoy": 8.7}, "2025-08": {"curr": 197880.72, "mom": -20.17, "yoy": 12.22}, "2025-09": {"curr": 156907.17, "mom": -20.71, "yoy": -15.45}, "2025-10": {"curr": 200576.92, "mom": 27.83, "yoy": 36.64}, "2025-11": {"curr": 218683.96, "mom": 9.03, "yoy": 52.22}, "2025-12": {"curr": 812037.33, "mom": 271.33, "yoy": 192.67}, "2026-01": {"curr": 130413.42, "mom": -83.94, "yoy": -57.88}, "2026-02": {"curr": 273623.26, "mom": 109.81, "yoy": 15.06}}, "POSUŠJE": {"2025-03": {"curr": 100656009.72, "mom": 1.72, "yoy": 1.4}, "2025-04": {"curr": 105571376.88, "mom": 4.88, "yoy": 6.47}, "2025-05": {"curr": 106578374.45, "mom": 0.95, "yoy": -1.88}, "2025-06": {"curr": 101855336.77, "mom": -4.43, "yoy": -1.67}, "2025-07": {"curr": 116997273.97, "mom": 14.87, "yoy": 1.6}, "2025-08": {"curr": 98759497.75, "mom": -15.59, "yoy": -7.48}, "2025-09": {"curr": 111562357.07, "mom": 12.96, "yoy": 4.97}, "2025-10": {"curr": 110616356.18, "mom": -0.85, "yoy": 12.16}, "2025-11": {"curr": 107439163.06, "mom": -2.87, "yoy": 22.95}, "2025-12": {"curr": 133185982.64, "mom": 23.96, "yoy": 31.07}, "2026-01": {"curr": 110467154.23, "mom": -17.06, "yoy": 14.21}, "2026-02": {"curr": 103109949.0, "mom": -6.66, "yoy": 4.2}}, "PROZOR": {"2025-03": {"curr": 5044757.66, "mom": 12.59, "yoy": 2.59}, "2025-04": {"curr": 5483889.28, "mom": 8.7, "yoy": 16.52}, "2025-05": {"curr": 5364669.76, "mom": -2.17, "yoy": -8.64}, "2025-06": {"curr": 5751609.22, "mom": 7.21, "yoy": 5.63}, "2025-07": {"curr": 6890375.51, "mom": 19.8, "yoy": 0.63}, "2025-08": {"curr": 7543256.92, "mom": 9.48, "yoy": -11.22}, "2025-09": {"curr": 6620166.03, "mom": -12.24, "yoy": 6.87}, "2025-10": {"curr": 6879585.7, "mom": 3.92, "yoy": 5.16}, "2025-11": {"curr": 6297363.73, "mom": -8.46, "yoy": -14.76}, "2025-12": {"curr": 7974148.57, "mom": 26.63, "yoy": 11.47}, "2026-01": {"curr": 1892833.51, "mom": -76.26, "yoy": -61.97}, "2026-02": {"curr": 5014748.26, "mom": 164.93, "yoy": 11.92}}, "RAVNO": {"2025-03": {"curr": 516487.23, "mom": 12.95, "yoy": 6.04}, "2025-04": {"curr": 555854.6, "mom": 7.62, "yoy": -3.18}, "2025-05": {"curr": 763892.47, "mom": 37.43, "yoy": 26.0}, "2025-06": {"curr": 610834.29, "mom": -20.04, "yoy": -3.13}, "2025-07": {"curr": 829531.34, "mom": 35.8, "yoy": -14.47}, "2025-08": {"curr": 845077.28, "mom": 1.87, "yoy": -54.61}, "2025-09": {"curr": 813084.93, "mom": -3.79, "yoy": 19.88}, "2025-10": {"curr": 924289.64, "mom": 13.68, "yoy": 61.2}, "2025-11": {"curr": 557086.2, "mom": -39.73, "yoy": -10.7}, "2025-12": {"curr": 719557.82, "mom": 29.16, "yoy": 32.2}, "2026-01": {"curr": 375761.99, "mom": -47.78, "yoy": -4.92}, "2026-02": {"curr": 473582.12, "mom": 26.03, "yoy": 3.57}}, "SANSKI MOST": {"2025-03": {"curr": 42933141.18, "mom": 11.04, "yoy": 5.68}, "2025-04": {"curr": 47815536.44, "mom": 11.37, "yoy": 18.66}, "2025-05": {"curr": 45965124.98, "mom": -3.87, "yoy": 3.71}, "2025-06": {"curr": 44608207.77, "mom": -2.95, "yoy": -3.3}, "2025-07": {"curr": 55887022.81, "mom": 25.28, "yoy": 1.82}, "2025-08": {"curr": 54166070.55, "mom": -3.08, "yoy": -1.57}, "2025-09": {"curr": 47695379.82, "mom": -11.95, "yoy": 12.12}, "2025-10": {"curr": 47176527.76, "mom": -1.09, "yoy": -1.32}, "2025-11": {"curr": 38928057.03, "mom": -17.48, "yoy": -14.45}, "2025-12": {"curr": 50185503.79, "mom": 28.92, "yoy": 6.32}, "2026-01": {"curr": 35549430.66, "mom": -29.16, "yoy": -12.41}, "2026-02": {"curr": 38224166.12, "mom": 7.52, "yoy": -1.14}}, "SAPNA": {"2025-03": {"curr": 2366736.17, "mom": 0.82, "yoy": 15.13}, "2025-04": {"curr": 2594063.17, "mom": 9.61, "yoy": 27.55}, "2025-05": {"curr": 2314781.89, "mom": -10.77, "yoy": 9.32}, "2025-06": {"curr": 2254687.25, "mom": -2.6, "yoy": 5.56}, "2025-07": {"curr": 2572479.42, "mom": 14.09, "yoy": 5.2}, "2025-08": {"curr": 2698636.61, "mom": 4.9, "yoy": 8.11}, "2025-09": {"curr": 2456207.64, "mom": -8.98, "yoy": 22.36}, "2025-10": {"curr": 2598592.27, "mom": 5.8, "yoy": 4.06}, "2025-11": {"curr": 2302675.17, "mom": -11.39, "yoy": 12.64}, "2025-12": {"curr": 2841151.46, "mom": 23.38, "yoy": 17.97}, "2026-01": {"curr": 2059874.32, "mom": -27.5, "yoy": 0.89}, "2026-02": {"curr": 2033117.03, "mom": -1.3, "yoy": -13.39}}, "SARAJEVO CENTAR": {"2025-03": {"curr": 303676241.97, "mom": -0.49, "yoy": 18.49}, "2025-04": {"curr": 356624158.07, "mom": 17.44, "yoy": 30.22}, "2025-05": {"curr": 329280877.12, "mom": -7.67, "yoy": 12.64}, "2025-06": {"curr": 319009530.59, "mom": -3.12, "yoy": 8.69}, "2025-07": {"curr": 353740864.66, "mom": 10.89, "yoy": 10.01}, "2025-08": {"curr": 327772098.01, "mom": -7.34, "yoy": 0.92}, "2025-09": {"curr": 344771302.56, "mom": 5.19, "yoy": 11.48}, "2025-10": {"curr": 385518050.12, "mom": 11.82, "yoy": 10.54}, "2025-11": {"curr": 336470864.44, "mom": -12.72, "yoy": 1.28}, "2025-12": {"curr": 445352172.06, "mom": 32.36, "yoy": 5.89}, "2026-01": {"curr": 298180123.55, "mom": -33.05, "yoy": -6.29}, "2026-02": {"curr": 311832658.13, "mom": 4.58, "yoy": 2.18}}, "SARAJEVO STARI GRAD": {"2025-03": {"curr": 64219333.24, "mom": 5.74, "yoy": 2.59}, "2025-04": {"curr": 72913175.41, "mom": 13.54, "yoy": 18.84}, "2025-05": {"curr": 74411286.81, "mom": 2.05, "yoy": 2.73}, "2025-06": {"curr": 76839824.07, "mom": 3.26, "yoy": 0.26}, "2025-07": {"curr": 85242638.36, "mom": 10.94, "yoy": -2.64}, "2025-08": {"curr": 91677296.01, "mom": 7.55, "yoy": 11.51}, "2025-09": {"curr": 81794021.97, "mom": -10.78, "yoy": 16.69}, "2025-10": {"curr": 77907890.2, "mom": -4.75, "yoy": 5.22}, "2025-11": {"curr": 64960590.98, "mom": -16.62, "yoy": -2.51}, "2025-12": {"curr": 93925510.34, "mom": 44.59, "yoy": 21.02}, "2026-01": {"curr": 70767843.73, "mom": -24.66, "yoy": 22.85}, "2026-02": {"curr": 62442924.91, "mom": -11.76, "yoy": 2.82}}, "SREBRENIK": {"2025-03": {"curr": 77518063.71, "mom": 20.59, "yoy": 9.23}, "2025-04": {"curr": 74408115.01, "mom": -4.01, "yoy": 11.34}, "2025-05": {"curr": 77013914.24, "mom": 3.5, "yoy": 0.56}, "2025-06": {"curr": 71069494.41, "mom": -7.72, "yoy": -1.04}, "2025-07": {"curr": 77161321.86, "mom": 8.57, "yoy": -1.98}, "2025-08": {"curr": 67381775.23, "mom": -12.67, "yoy": -10.54}, "2025-09": {"curr": 87573551.88, "mom": 29.97, "yoy": 22.33}, "2025-10": {"curr": 84409681.93, "mom": -3.61, "yoy": 11.99}, "2025-11": {"curr": 70317328.86, "mom": -16.7, "yoy": -1.62}, "2025-12": {"curr": 90794355.61, "mom": 29.12, "yoy": 29.93}, "2026-01": {"curr": 61007751.7, "mom": -32.81, "yoy": -0.05}, "2026-02": {"curr": 67240258.8, "mom": 10.22, "yoy": 4.6}}, "STOLAC": {"2025-03": {"curr": 7991047.34, "mom": 11.47, "yoy": -1.19}, "2025-04": {"curr": 10643623.62, "mom": 33.19, "yoy": 55.18}, "2025-05": {"curr": 9975988.32, "mom": -6.27, "yoy": 20.86}, "2025-06": {"curr": 8694181.94, "mom": -12.85, "yoy": -5.39}, "2025-07": {"curr": 9811851.86, "mom": 12.86, "yoy": 15.36}, "2025-08": {"curr": 9715841.93, "mom": -0.98, "yoy": 17.73}, "2025-09": {"curr": 14701199.82, "mom": 51.31, "yoy": 95.47}, "2025-10": {"curr": 18620914.31, "mom": 26.66, "yoy": 159.61}, "2025-11": {"curr": 14179667.66, "mom": -23.85, "yoy": 82.76}, "2025-12": {"curr": 13912143.37, "mom": -1.89, "yoy": 73.93}, "2026-01": {"curr": 8465560.54, "mom": -39.15, "yoy": 31.18}, "2026-02": {"curr": 7438206.37, "mom": -12.14, "yoy": 3.76}}, "TEOČAK": {"2025-03": {"curr": 2350097.05, "mom": 39.37, "yoy": 38.95}, "2025-04": {"curr": 1923255.14, "mom": -18.16, "yoy": 4.43}, "2025-05": {"curr": 2726236.3, "mom": 41.75, "yoy": 22.5}, "2025-06": {"curr": 2521506.34, "mom": -7.51, "yoy": 19.09}, "2025-07": {"curr": 2649074.48, "mom": 5.06, "yoy": 27.31}, "2025-08": {"curr": 2876235.36, "mom": 8.58, "yoy": 3.67}, "2025-09": {"curr": 2752644.19, "mom": -4.3, "yoy": 39.73}, "2025-10": {"curr": 3325071.46, "mom": 20.8, "yoy": 8.01}, "2025-11": {"curr": 2138987.5, "mom": -35.67, "yoy": 12.16}, "2025-12": {"curr": 2792730.62, "mom": 30.56, "yoy": 5.08}, "2026-01": {"curr": 1959770.53, "mom": -29.83, "yoy": 42.01}, "2026-02": {"curr": 1617750.99, "mom": -17.45, "yoy": -4.06}}, "TEŠANJ": {"2025-03": {"curr": 206269523.59, "mom": -4.15, "yoy": 4.12}, "2025-04": {"curr": 225298232.65, "mom": 9.23, "yoy": 11.81}, "2025-05": {"curr": 234194292.22, "mom": 3.95, "yoy": 3.32}, "2025-06": {"curr": 224836237.65, "mom": -4.0, "yoy": 7.71}, "2025-07": {"curr": 262359494.43, "mom": 16.69, "yoy": 8.56}, "2025-08": {"curr": 233790196.29, "mom": -10.89, "yoy": 10.26}, "2025-09": {"curr": 244021095.25, "mom": 4.38, "yoy": 10.34}, "2025-10": {"curr": 312708209.68, "mom": 28.15, "yoy": 36.19}, "2025-11": {"curr": 289235923.48, "mom": -7.51, "yoy": 28.78}, "2025-12": {"curr": 365341836.38, "mom": 26.31, "yoy": 65.68}, "2026-01": {"curr": 246658542.28, "mom": -32.49, "yoy": 24.48}, "2026-02": {"curr": 285538932.07, "mom": 15.76, "yoy": 32.69}}, "TOMISLAVGRAD": {"2025-03": {"curr": 35202170.07, "mom": 2.67, "yoy": -5.56}, "2025-04": {"curr": 42230855.66, "mom": 19.97, "yoy": 18.75}, "2025-05": {"curr": 44084570.61, "mom": 4.39, "yoy": 2.91}, "2025-06": {"curr": 42863282.02, "mom": -2.77, "yoy": 7.74}, "2025-07": {"curr": 48624856.47, "mom": 13.44, "yoy": 9.37}, "2025-08": {"curr": 52136234.08, "mom": 7.22, "yoy": 3.24}, "2025-09": {"curr": 42557487.74, "mom": -18.37, "yoy": 9.18}, "2025-10": {"curr": 47666313.95, "mom": 12.0, "yoy": 6.01}, "2025-11": {"curr": 37481478.04, "mom": -21.37, "yoy": -6.61}, "2025-12": {"curr": 47707359.21, "mom": 27.28, "yoy": 16.98}, "2026-01": {"curr": 34485826.73, "mom": -27.71, "yoy": 4.46}, "2026-02": {"curr": 36717899.64, "mom": 6.47, "yoy": 7.09}}, "TRAVNIK": {"2025-03": {"curr": 62492545.67, "mom": 3.6, "yoy": 8.01}, "2025-04": {"curr": 67855981.65, "mom": 8.58, "yoy": 19.83}, "2025-05": {"curr": 67899835.67, "mom": 0.06, "yoy": 2.0}, "2025-06": {"curr": 66458077.89, "mom": -2.12, "yoy": 1.02}, "2025-07": {"curr": 70944159.03, "mom": 6.75, "yoy": 0.74}, "2025-08": {"curr": 70298543.58, "mom": -0.91, "yoy": 7.68}, "2025-09": {"curr": 70477871.13, "mom": 0.26, "yoy": 15.43}, "2025-10": {"curr": 74192032.53, "mom": 5.27, "yoy": 7.89}, "2025-11": {"curr": 66943575.19, "mom": -9.77, "yoy": 3.41}, "2025-12": {"curr": 79463056.75, "mom": 18.7, "yoy": 12.57}, "2026-01": {"curr": 64552531.86, "mom": -18.76, "yoy": 5.04}, "2026-02": {"curr": 70167155.98, "mom": 8.7, "yoy": 16.32}}, "TRNOVO": {"2025-03": {"curr": 1732179.97, "mom": -45.81, "yoy": -8.57}, "2025-04": {"curr": 1041931.78, "mom": -39.85, "yoy": -21.29}, "2025-05": {"curr": 3436401.27, "mom": 229.81, "yoy": 324.68}, "2025-06": {"curr": 1095805.7, "mom": -68.11, "yoy": -5.38}, "2025-07": {"curr": 1800417.49, "mom": 64.3, "yoy": -18.25}, "2025-08": {"curr": 2698709.47, "mom": 49.89, "yoy": 26.52}, "2025-09": {"curr": 2249240.75, "mom": -16.65, "yoy": 145.51}, "2025-10": {"curr": 1933464.8, "mom": -14.04, "yoy": 6.3}, "2025-11": {"curr": 2154367.56, "mom": 11.43, "yoy": 22.5}, "2025-12": {"curr": 2975374.41, "mom": 38.11, "yoy": -4.62}, "2026-01": {"curr": 5011045.66, "mom": 68.42, "yoy": 11.27}, "2026-02": {"curr": 2792543.65, "mom": -44.27, "yoy": -12.63}}, "TUZLA": {"2025-03": {"curr": 319945751.06, "mom": 8.88, "yoy": 5.06}, "2025-04": {"curr": 367797760.8, "mom": 14.96, "yoy": 16.69}, "2025-05": {"curr": 346959824.04, "mom": -5.67, "yoy": 4.15}, "2025-06": {"curr": 336821129.62, "mom": -2.92, "yoy": 4.53}, "2025-07": {"curr": 360426124.53, "mom": 7.01, "yoy": -1.0}, "2025-08": {"curr": 363336716.18, "mom": 0.81, "yoy": -0.76}, "2025-09": {"curr": 352417268.21, "mom": -3.01, "yoy": 10.51}, "2025-10": {"curr": 378365218.21, "mom": 7.36, "yoy": 7.48}, "2025-11": {"curr": 311617886.73, "mom": -17.64, "yoy": -9.25}, "2025-12": {"curr": 415350155.08, "mom": 33.29, "yoy": 7.09}, "2026-01": {"curr": 277388952.54, "mom": -33.22, "yoy": -7.88}, "2026-02": {"curr": 308833268.62, "mom": 11.34, "yoy": 5.1}}, "USORA": {"2025-03": {"curr": 29971799.71, "mom": 23.32, "yoy": 22.25}, "2025-04": {"curr": 34236323.12, "mom": 14.23, "yoy": 49.4}, "2025-05": {"curr": 38789315.3, "mom": 13.3, "yoy": 62.78}, "2025-06": {"curr": 33299062.47, "mom": -14.15, "yoy": 34.75}, "2025-07": {"curr": 38223092.49, "mom": 14.79, "yoy": 10.8}, "2025-08": {"curr": 34284324.41, "mom": -10.3, "yoy": 9.28}, "2025-09": {"curr": 35219778.91, "mom": 2.73, "yoy": 29.83}, "2025-10": {"curr": 38607513.46, "mom": 9.62, "yoy": 41.95}, "2025-11": {"curr": 32254510.54, "mom": -16.46, "yoy": 23.64}, "2025-12": {"curr": 36611903.1, "mom": 13.51, "yoy": 15.2}, "2026-01": {"curr": 26375845.75, "mom": -27.96, "yoy": 16.87}, "2026-02": {"curr": 32294650.31, "mom": 22.44, "yoy": 32.88}}, "VAREŠ": {"2025-03": {"curr": 46889686.97, "mom": 206.36, "yoy": 427.77}, "2025-04": {"curr": 33107227.89, "mom": -29.39, "yoy": 475.89}, "2025-05": {"curr": 39883192.54, "mom": 20.47, "yoy": 120.02}, "2025-06": {"curr": 24771298.4, "mom": -37.89, "yoy": 195.19}, "2025-07": {"curr": 24552244.52, "mom": -0.88, "yoy": 286.5}, "2025-08": {"curr": 16130085.03, "mom": -34.3, "yoy": 12.56}, "2025-09": {"curr": 7895213.16, "mom": -51.05, "yoy": -10.18}, "2025-10": {"curr": 51727788.12, "mom": 555.18, "yoy": 485.72}, "2025-11": {"curr": 12544408.88, "mom": -75.75, "yoy": -53.09}, "2025-12": {"curr": 6769494.88, "mom": -46.04, "yoy": -63.45}, "2026-01": {"curr": 12516308.2, "mom": 84.89, "yoy": -52.85}, "2026-02": {"curr": 7204918.46, "mom": -42.44, "yoy": -52.93}}, "VELIKA KLADUŠA": {"2025-03": {"curr": 42922626.15, "mom": 14.51, "yoy": 9.81}, "2025-04": {"curr": 54246719.87, "mom": 26.38, "yoy": 24.47}, "2025-05": {"curr": 51426387.29, "mom": -5.2, "yoy": 4.61}, "2025-06": {"curr": 47790629.77, "mom": -7.07, "yoy": 4.86}, "2025-07": {"curr": 52707585.73, "mom": 10.29, "yoy": 0.39}, "2025-08": {"curr": 59735719.39, "mom": 13.33, "yoy": 12.17}, "2025-09": {"curr": 48677560.63, "mom": -18.51, "yoy": 15.33}, "2025-10": {"curr": 53879259.32, "mom": 10.69, "yoy": 18.14}, "2025-11": {"curr": 42752383.07, "mom": -20.65, "yoy": 2.21}, "2025-12": {"curr": 56264942.7, "mom": 31.61, "yoy": 8.53}, "2026-01": {"curr": 41196397.01, "mom": -26.78, "yoy": 17.13}, "2026-02": {"curr": 43316522.39, "mom": 5.15, "yoy": 15.56}}, "VISOKO": {"2025-03": {"curr": 141018830.51, "mom": 2.84, "yoy": 24.34}, "2025-04": {"curr": 158130646.01, "mom": 12.13, "yoy": 41.43}, "2025-05": {"curr": 142007555.96, "mom": -10.2, "yoy": 16.92}, "2025-06": {"curr": 145226922.2, "mom": 2.27, "yoy": 27.03}, "2025-07": {"curr": 148983872.19, "mom": 2.59, "yoy": 17.7}, "2025-08": {"curr": 152461883.58, "mom": 2.33, "yoy": 25.38}, "2025-09": {"curr": 156562787.92, "mom": 2.69, "yoy": 22.24}, "2025-10": {"curr": 176141605.75, "mom": 12.51, "yoy": 29.02}, "2025-11": {"curr": 146718085.13, "mom": -16.7, "yoy": -0.77}, "2025-12": {"curr": 204012770.65, "mom": 39.05, "yoy": 31.49}, "2026-01": {"curr": 125331087.08, "mom": -38.57, "yoy": 6.33}, "2026-02": {"curr": 132933828.85, "mom": 6.07, "yoy": -3.06}}, "VITEZ": {"2025-03": {"curr": 96480513.08, "mom": -0.74, "yoy": -5.28}, "2025-04": {"curr": 109743719.85, "mom": 13.75, "yoy": 17.85}, "2025-05": {"curr": 109691255.05, "mom": -0.05, "yoy": 4.18}, "2025-06": {"curr": 110254505.28, "mom": 0.51, "yoy": 6.57}, "2025-07": {"curr": 109936423.56, "mom": -0.29, "yoy": -1.75}, "2025-08": {"curr": 107678526.29, "mom": -2.05, "yoy": -2.7}, "2025-09": {"curr": 111883931.09, "mom": 3.91, "yoy": 7.98}, "2025-10": {"curr": 119611251.23, "mom": 6.91, "yoy": 3.72}, "2025-11": {"curr": 90053922.91, "mom": -24.71, "yoy": -16.04}, "2025-12": {"curr": 123918660.22, "mom": 37.6, "yoy": 8.64}, "2026-01": {"curr": 90252347.76, "mom": -27.17, "yoy": -4.62}, "2026-02": {"curr": 102306400.45, "mom": 13.36, "yoy": 5.26}}, "VOGOŠĆA": {"2025-03": {"curr": 86691362.58, "mom": 6.79, "yoy": 5.56}, "2025-04": {"curr": 93342486.31, "mom": 7.67, "yoy": 18.12}, "2025-05": {"curr": 90331015.33, "mom": -3.23, "yoy": 0.33}, "2025-06": {"curr": 96551273.59, "mom": 6.89, "yoy": 7.8}, "2025-07": {"curr": 92966587.46, "mom": -3.71, "yoy": -3.02}, "2025-08": {"curr": 88978798.87, "mom": -4.29, "yoy": -3.7}, "2025-09": {"curr": 95688291.84, "mom": 7.54, "yoy": 8.51}, "2025-10": {"curr": 97342036.23, "mom": 1.73, "yoy": 1.72}, "2025-11": {"curr": 91699075.01, "mom": -5.8, "yoy": -0.17}, "2025-12": {"curr": 138133074.48, "mom": 50.64, "yoy": 32.86}, "2026-01": {"curr": 83977454.63, "mom": -39.21, "yoy": 1.15}, "2026-02": {"curr": 87294836.03, "mom": 3.95, "yoy": 7.53}}, "ZAVIDOVIĆI": {"2025-03": {"curr": 30997844.69, "mom": 18.77, "yoy": 13.81}, "2025-04": {"curr": 30923265.5, "mom": -0.24, "yoy": 7.67}, "2025-05": {"curr": 29056460.65, "mom": -6.04, "yoy": 3.26}, "2025-06": {"curr": 32918523.57, "mom": 13.29, "yoy": 11.1}, "2025-07": {"curr": 29691527.48, "mom": -9.8, "yoy": -5.6}, "2025-08": {"curr": 33389982.4, "mom": 12.46, "yoy": -5.65}, "2025-09": {"curr": 31706159.5, "mom": -5.04, "yoy": 7.78}, "2025-10": {"curr": 36843167.96, "mom": 16.2, "yoy": 8.71}, "2025-11": {"curr": 31631479.89, "mom": -14.15, "yoy": -13.55}, "2025-12": {"curr": 36278500.54, "mom": 14.69, "yoy": -1.65}, "2026-01": {"curr": 28137581.57, "mom": -22.44, "yoy": 7.2}, "2026-02": {"curr": 27611908.34, "mom": -1.87, "yoy": 5.8}}, "ZENICA": {"2025-03": {"curr": 265426688.78, "mom": 0.73, "yoy": 19.95}, "2025-04": {"curr": 283904042.27, "mom": 6.96, "yoy": 27.68}, "2025-05": {"curr": 277425164.24, "mom": -2.28, "yoy": 21.32}, "2025-06": {"curr": 281230958.85, "mom": 1.37, "yoy": 12.39}, "2025-07": {"curr": 336601276.72, "mom": 19.69, "yoy": 56.78}, "2025-08": {"curr": 307905051.09, "mom": -8.53, "yoy": 9.65}, "2025-09": {"curr": 279486182.87, "mom": -9.23, "yoy": 19.72}, "2025-10": {"curr": 285831172.25, "mom": 2.27, "yoy": 7.69}, "2025-11": {"curr": 266962422.99, "mom": -6.6, "yoy": 5.46}, "2025-12": {"curr": 324906624.64, "mom": 21.71, "yoy": 9.17}, "2026-01": {"curr": 232819109.13, "mom": -28.34, "yoy": -7.02}, "2026-02": {"curr": 296696137.2, "mom": 27.44, "yoy": 12.59}}, "ČAPLJINA": {"2025-03": {"curr": 42729447.4, "mom": 14.58, "yoy": 20.51}, "2025-04": {"curr": 43966672.09, "mom": 2.9, "yoy": 5.01}, "2025-05": {"curr": 44128466.26, "mom": 0.37, "yoy": -3.33}, "2025-06": {"curr": 48277763.78, "mom": 9.4, "yoy": 8.01}, "2025-07": {"curr": 47011630.92, "mom": -2.62, "yoy": 2.62}, "2025-08": {"curr": 50465864.19, "mom": 7.35, "yoy": 12.38}, "2025-09": {"curr": 46429039.39, "mom": -8.0, "yoy": 16.15}, "2025-10": {"curr": 45006692.45, "mom": -3.06, "yoy": 6.87}, "2025-11": {"curr": 40244904.96, "mom": -10.58, "yoy": 6.68}, "2025-12": {"curr": 54701747.94, "mom": 35.92, "yoy": 20.68}, "2026-01": {"curr": 36999324.27, "mom": -32.36, "yoy": -0.11}, "2026-02": {"curr": 38313182.3, "mom": 3.55, "yoy": 2.74}}, "ČELIĆ": {"2025-03": {"curr": 9410655.01, "mom": 15.45, "yoy": 21.14}, "2025-04": {"curr": 11166382.87, "mom": 18.66, "yoy": 17.32}, "2025-05": {"curr": 10199890.69, "mom": -8.66, "yoy": -3.96}, "2025-06": {"curr": 9206979.29, "mom": -9.73, "yoy": 3.2}, "2025-07": {"curr": 11623983.86, "mom": 26.25, "yoy": 6.72}, "2025-08": {"curr": 10664369.04, "mom": -8.26, "yoy": -7.55}, "2025-09": {"curr": 9101187.68, "mom": -14.66, "yoy": -4.07}, "2025-10": {"curr": 10397622.28, "mom": 14.24, "yoy": 0.87}, "2025-11": {"curr": 8845945.59, "mom": -14.92, "yoy": -12.37}, "2025-12": {"curr": 11387426.31, "mom": 28.73, "yoy": 30.01}, "2026-01": {"curr": 7095261.35, "mom": -37.69, "yoy": -8.41}, "2026-02": {"curr": 8307991.5, "mom": 17.09, "yoy": 1.93}}, "ČITLUK": {"2025-03": {"curr": 71309693.19, "mom": 19.74, "yoy": 8.16}, "2025-04": {"curr": 73604373.18, "mom": 3.22, "yoy": 11.21}, "2025-05": {"curr": 82858319.84, "mom": 12.57, "yoy": -1.34}, "2025-06": {"curr": 80603084.71, "mom": -2.72, "yoy": 4.49}, "2025-07": {"curr": 89149757.66, "mom": 10.6, "yoy": 3.19}, "2025-08": {"curr": 87308773.11, "mom": -2.07, "yoy": 5.21}, "2025-09": {"curr": 84953796.66, "mom": -2.7, "yoy": 16.13}, "2025-10": {"curr": 89563632.97, "mom": 5.43, "yoy": 9.93}, "2025-11": {"curr": 71750826.02, "mom": -19.89, "yoy": 11.82}, "2025-12": {"curr": 84356673.34, "mom": 17.57, "yoy": 16.71}, "2026-01": {"curr": 62288058.12, "mom": -26.16, "yoy": 6.33}, "2026-02": {"curr": 64308779.99, "mom": 3.24, "yoy": 7.98}}, "ŠIROKI BRIJEG": {"2025-03": {"curr": 165631143.1, "mom": 8.0, "yoy": 14.29}, "2025-04": {"curr": 199988136.5, "mom": 20.74, "yoy": 42.68}, "2025-05": {"curr": 167419010.61, "mom": -16.29, "yoy": 17.27}, "2025-06": {"curr": 158458879.35, "mom": -5.35, "yoy": 6.1}, "2025-07": {"curr": 182816445.22, "mom": 15.37, "yoy": 8.17}, "2025-08": {"curr": 155486002.38, "mom": -14.95, "yoy": -3.94}, "2025-09": {"curr": 166912067.43, "mom": 7.35, "yoy": 0.94}, "2025-10": {"curr": 175967540.89, "mom": 5.43, "yoy": 2.26}, "2025-11": {"curr": 175552628.19, "mom": -0.24, "yoy": 16.39}, "2025-12": {"curr": 213282607.16, "mom": 21.49, "yoy": -0.68}, "2026-01": {"curr": 154514784.01, "mom": -27.55, "yoy": 9.84}, "2026-02": {"curr": 172859617.25, "mom": 11.87, "yoy": 12.72}}, "ŽEPČE": {"2025-03": {"curr": 42024428.73, "mom": -3.89, "yoy": -10.56}, "2025-04": {"curr": 51653438.03, "mom": 22.91, "yoy": 9.58}, "2025-05": {"curr": 51296823.09, "mom": -0.69, "yoy": 3.27}, "2025-06": {"curr": 45313156.24, "mom": -11.66, "yoy": -5.45}, "2025-07": {"curr": 49190087.92, "mom": 8.56, "yoy": -10.83}, "2025-08": {"curr": 49490715.69, "mom": 0.61, "yoy": 3.24}, "2025-09": {"curr": 52956248.31, "mom": 7.0, "yoy": 10.49}, "2025-10": {"curr": 55497796.74, "mom": 4.8, "yoy": -1.25}, "2025-11": {"curr": 45343912.51, "mom": -18.3, "yoy": 4.25}, "2025-12": {"curr": 56247915.38, "mom": 24.05, "yoy": 9.41}, "2026-01": {"curr": 41670074.22, "mom": -25.92, "yoy": -1.24}, "2026-02": {"curr": 41154190.24, "mom": -1.24, "yoy": -5.88}}, "ŽIVINICE": {"2025-03": {"curr": 129537978.71, "mom": 8.67, "yoy": 5.65}, "2025-04": {"curr": 148795564.43, "mom": 14.87, "yoy": 22.08}, "2025-05": {"curr": 145303839.38, "mom": -2.35, "yoy": 6.7}, "2025-06": {"curr": 138074695.84, "mom": -4.98, "yoy": 3.45}, "2025-07": {"curr": 153974771.65, "mom": 11.52, "yoy": 3.99}, "2025-08": {"curr": 147030796.51, "mom": -4.51, "yoy": -1.72}, "2025-09": {"curr": 144541281.28, "mom": -1.69, "yoy": 9.51}, "2025-10": {"curr": 153488359.02, "mom": 6.19, "yoy": 5.59}, "2025-11": {"curr": 126408763.57, "mom": -17.64, "yoy": -5.11}, "2025-12": {"curr": 164530347.55, "mom": 30.16, "yoy": 11.87}, "2026-01": {"curr": 110690569.11, "mom": -32.72, "yoy": -4.04}, "2026-02": {"curr": 119075560.08, "mom": 7.58, "yoy": -0.11}}}, "fbih_data": {"2025-03": {"curr": 5567734931.12, "mom": 7.96, "yoy": 11.07}, "2025-04": {"curr": 6094876569.75, "mom": 9.47, "yoy": 20.59}, "2025-05": {"curr": 5993394291.49, "mom": -1.67, "yoy": 7.74}, "2025-06": {"curr": 5843366436.05, "mom": -2.5, "yoy": 7.88}, "2025-07": {"curr": 6457778143.18, "mom": 10.51, "yoy": 6.67}, "2025-08": {"curr": 6066161170.1, "mom": -6.06, "yoy": 2.47}, "2025-09": {"curr": 6134005063.11, "mom": 1.12, "yoy": 12.61}, "2025-10": {"curr": 6625811254.03, "mom": 8.02, "yoy": 12.28}, "2025-11": {"curr": 5575606043.45, "mom": -15.85, "yoy": -0.43}, "2025-12": {"curr": 7127838877.88, "mom": 27.84, "yoy": 14.6}, "2026-01": {"curr": 5050002598.67, "mom": -29.15, "yoy": 1.02}, "2026-02": {"curr": 5540592053.64, "mom": 9.71, "yoy": 7.43}}, "all_grads": ["BANOVIĆI", "BIHAĆ", "BOSANSKA KRUPA", "BOSANSKI PETROVAC", "BOSANSKO GRAHOVO", "BREZA", "BUGOJNO", "BUSOVAČA", "BUŽIM", "CAZIN", "DOBOJ ISTOK", "DOBOJ JUG", "DOBRETIĆI", "DOMALJEVAC/ŠAMAC", "DONJI VAKUF", "DRVAR", "FOJNICA", "FOČA", "GLAMOČ", "GORAŽDE", "GORNJI VAKUF-USKOPLJE", "GRADAČAC", "GRAČANICA", "GRUDE", "HADŽIĆI", "ILIDŽA", "ILIJAŠ", "JABLANICA", "JAJCE", "KAKANJ", "KALESIJA", "KISELJAK", "KLADANJ", "KLJUČ", "KONJIC", "KREŠEVO", "KUPRES", "LIVNO", "LJUBUŠKI", "LUKAVAC", "MAGLAJ", "MOSTAR", "NEUM", "NOVI GRAD SARAJEVO", "NOVI TRAVNIK", "NOVO SARAJEVO", "ODŽAK", "OLOVO", "ORAŠJE", "PALE", "POSUŠJE", "PROZOR", "RAVNO", "SANSKI MOST", "SAPNA", "SARAJEVO CENTAR", "SARAJEVO STARI GRAD", "SREBRENIK", "STOLAC", "TEOČAK", "TEŠANJ", "TOMISLAVGRAD", "TRAVNIK", "TRNOVO", "TUZLA", "USORA", "VAREŠ", "VELIKA KLADUŠA", "VISOKO", "VITEZ", "VOGOŠĆA", "ZAVIDOVIĆI", "ZENICA", "ČAPLJINA", "ČELIĆ", "ČITLUK", "ŠIROKI BRIJEG", "ŽEPČE", "ŽIVINICE"]};
+
+
+
+let gradYoYInited = false;
+let gradYoYPage = 1;
+const gradYoYPageSize = 25;
+let gradYoYSorted = [];
+
+const MONTHS_LABEL = {
+  '2025-03':'Ožujak 25','2025-04':'Travanj 25','2025-05':'Svibanj 25',
+  '2025-06':'Lipanj 25','2025-07':'Srpanj 25','2025-08':'Kolovoz 25',
+  '2025-09':'Rujan 25','2025-10':'Listopad 25','2025-11':'Studeni 25',
+  '2025-12':'Prosinac 25','2026-01':'Siječanj 26','2026-02':'Veljača 26'
+};
+
+
+
+
+
+
+
+
+// switchTab handled by switchSubTab above
+
+
+
+
+function initGradYoYTab() {
+  gradYoYInited = true;
+
+  // FBIH chart
+  const periods = YOY_DATA.periods;
+  const fbihYoys = periods.map(p => YOY_DATA.fbih_data[p]?.yoy);
+  const colors = fbihYoys.map(v => v >= 0 ? 'rgba(21,128,61,0.75)' : 'rgba(185,28,28,0.75)');
+
+  new Chart(document.getElementById('chartGradYoYFBIH'), {
+    type: 'bar',
+    data: {
+      labels: periods.map(p => MONTHS_LABEL[p]),
+      datasets: [{
+        label: 'YoY FBiH %',
+        data: fbihYoys,
+        backgroundColor: colors,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { ...chartDefaults.plugins,
+        tooltip: { callbacks: { label: ctx => {
+          const p = periods[ctx.dataIndex];
+          const d = YOY_DATA.fbih_data[p];
+          return [` YoY: ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y?.toFixed(1)}%`,
+                  ` Promet: ${(d.curr/1e9).toFixed(2)} mlrd`,
+                  ` Preth: ${(d.prev/1e9).toFixed(2)} mlrd`];
+        }}}
+      },
+      scales: { ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y,
+          ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' }
+        }
+      }
+    }
+  });
+
+  renderGradYoYTable();
+}
+
+function renderGradYoYTable() {
+  const q = (document.getElementById('gradyoy-search')?.value || '').toLowerCase();
+  const sortBy = document.getElementById('gradyoy-sort')?.value || 'latest_desc';
+  const periods = YOY_DATA.periods;
+
+  let grads = YOY_DATA.all_grads.filter(g => g.toLowerCase().includes(q));
+
+  const avgYoy = g => {
+    const vals = periods.map(p => YOY_DATA.grad_data[g]?.[p]?.yoy).filter(v => v != null);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : -999;
+  };
+  const latestVal = g => {
+    for (let i = periods.length-1; i >= 0; i--) {
+      const v = YOY_DATA.grad_data[g]?.[periods[i]]?.curr;
+      if (v) return v;
+    }
+    return 0;
+  };
+
+  grads.sort((a, b) => {
+    if (sortBy === 'avg_yoy_desc') return avgYoy(b) - avgYoy(a);
+    if (sortBy === 'avg_yoy_asc') return avgYoy(a) - avgYoy(b);
+    if (sortBy === 'latest_desc') return latestVal(b) - latestVal(a);
+    if (sortBy === 'name_asc') return a.localeCompare(b);
+    return 0;
+  });
+
+  gradYoYSorted = grads;
+
+  // Header
+  const thead = document.getElementById('gradyoy-thead');
+  thead.innerHTML = `<tr>
+    <th style="text-align:left;width:36px">#</th>
+    <th style="text-align:left;min-width:160px;position:sticky;left:0;background:var(--surface2);z-index:2">Općina</th>
+    <th style="font-size:10px;color:var(--muted);white-space:nowrap;min-width:60px">Avg<br>YoY</th>
+    ${periods.map(p => `<th style="text-align:right;white-space:nowrap;min-width:110px;font-size:10px;padding:8px 10px">
+      ${MONTHS_LABEL[p]}<br>
+      <span style="color:var(--muted);font-size:9px;font-weight:400">M BAM · YoY · MoM</span>
+    </th>`).join('')}
+  </tr>`;
+
+  // Ćelija: promet + YoY ispod + MoM ispod
+  const buildCell = (d) => {
+    if (!d?.curr) return '<td style="color:var(--muted);text-align:center;font-size:11px;padding:8px 10px">—</td>';
+
+    const curr = (d.curr/1e6).toFixed(1);
+
+    let yoyHtml = '<span style="color:var(--muted)">—</span>';
+    if (d.yoy != null) {
+      const col = d.yoy >= 0 ? '#15803d' : '#b91c1c';
+      yoyHtml = `<span style="color:${col}">${d.yoy > 0 ? '+' : ''}${d.yoy.toFixed(1)}%</span>`;
+    }
+
+    let momHtml = '<span style="color:var(--muted)">—</span>';
+    if (d.mom != null) {
+      const col = d.mom >= 0 ? '#1d4ed8' : '#c2410c';
+      momHtml = `<span style="color:${col}">${d.mom > 0 ? '+' : ''}${d.mom.toFixed(1)}%</span>`;
+    }
+
+    return `<td style="text-align:right;padding:6px 10px;line-height:1.3;vertical-align:top">
+      <div style="font-size:12px;font-family:'JetBrains Mono',monospace;font-weight:600">${curr}</div>
+      <div style="font-size:9px;margin-top:2px">${yoyHtml} <span style="color:var(--border)">|</span> ${momHtml}</div>
+    </td>`;
+  };
+
+  const fbihAvgYoys = periods.map(p => YOY_DATA.fbih_data[p]?.yoy).filter(v=>v!=null);
+  const fbihAvg = fbihAvgYoys.reduce((a,b)=>a+b,0)/fbihAvgYoys.length;
+
+  let rows = '';
+  if (gradYoYPage === 1 && !q) {
+    rows += `<tr style="border-bottom:2px solid var(--accent);background:rgba(26,86,219,0.05)">
+      <td style="color:var(--accent);font-family:'JetBrains Mono',monospace;text-align:right;padding:6px 10px">Σ</td>
+      <td style="font-family:'Source Serif 4',Georgia,serif;font-weight:700;color:var(--accent);position:sticky;left:0;background:rgba(255,255,255,0.97);z-index:1;padding:6px 14px">FBiH UKUPNO</td>
+      <td style="text-align:right;font-weight:700;color:${fbihAvg>=0?'var(--pos)':'var(--neg)'};font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px">
+        ${fbihAvg>0?'+':''}${fbihAvg.toFixed(1)}%
+      </td>
+      ${periods.map(p => buildCell(YOY_DATA.fbih_data[p])).join('')}
+    </tr>`;
+  }
+
+  const start = (gradYoYPage - 1) * gradYoYPageSize;
+  const page = grads.slice(start, start + gradYoYPageSize);
+
+  page.forEach((g, i) => {
+    const avg = avgYoy(g);
+    const avgCol = avg >= 0 ? 'var(--pos)' : 'var(--neg)';
+    rows += `<tr>
+      <td class="rank">${start + i + 1}</td>
+      <td data-grad="${g}" data-mode="gradyoy" style="font-family:'Source Serif 4',Georgia,serif;font-weight:600;text-align:left;position:sticky;left:0;background:var(--surface);z-index:1;padding:6px 14px;cursor:pointer">${g}</td>
+      <td style="text-align:right;font-weight:600;color:${avgCol};font-size:12px;font-family:'JetBrains Mono',monospace;padding:6px 10px">
+        ${avg > -900 ? (avg > 0 ? '+' : '') + avg.toFixed(1) + '%' : '—'}
+      </td>
+      ${periods.map(p => buildCell(YOY_DATA.grad_data[g]?.[p])).join('')}
+    </tr>`;
+  });
+
+  document.getElementById('gradyoy-tbody').innerHTML = rows;
+  renderPagination('gradyoy', grads.length, gradYoYPage, gradYoYPageSize,
+    p => { gradYoYPage = p; renderGradYoYTable(); });
+}
+
+
+
+// ═══════════════════════ HOVER TOOLTIP ═══════════════════════
+let ttChart = null;
+let ttTimeout = null;
+const tooltip = document.getElementById('grad-tooltip');
+const ttCanvas = document.getElementById('tt-chart');
+const ttName = document.getElementById('tt-grad-name');
+const ttSub = document.getElementById('tt-grad-sub');
+
+// Sve dostupne godine za godišnji tab
+const ANNUAL_YEARS = ['2020','2021','2022','2023','2024','2025'];
+
+// Sve dostupne periode za mjesečni tab
+const ALL_PERIODS_MONTHLY = DATA.all_periods;
+
+function showGradTooltip(e, gradName, mode) {
+  clearTimeout(ttTimeout);
+
+  // Pripremi podatke ovisno o modusu
+  let labels = [], values = [], yoys = [], title = '', sub = '';
+
+  if (mode === 'annual') {
+    // Godišnji promet po godinama
+    const row = DATA.annual_rows.find(r => r.grad === gradName);
+    if (!row) return;
+    labels = ANNUAL_YEARS.filter(y => row[y] != null);
+    values = labels.map(y => +(row[y]/1e6).toFixed(1));
+    yoys   = labels.map((y,i) => {
+      if (i === 0) return null;
+      const prev = row[labels[i-1]];
+      return prev ? +((row[y]/prev - 1)*100).toFixed(1) : null;
+    });
+    title = gradName;
+    sub = 'Godišnji promet (M BAM)';
+
+  } else if (mode === 'monthly') {
+    // Mjesečni promet - zadnjih 24 perioda iz grad_monthly
+    const gm = DATA.grad_monthly[gradName];
+    if (!gm) {
+      // Nije u top15 - uzmi iz YOY_DATA ako postoji
+      const gd = YOY_DATA.grad_data[gradName];
+      if (!gd) return;
+      const periods = YOY_DATA.periods;
+      labels = periods.map(p => MONTHS_LABEL[p] || p);
+      values = periods.map(p => gd[p]?.curr ? +(gd[p].curr/1e6).toFixed(1) : null);
+      yoys   = periods.map(p => gd[p]?.yoy ?? null);
+    } else {
+      const periods = ALL_PERIODS_MONTHLY.slice(-24);
+      labels = periods.map(p => {
+        const [y,m] = p.split('-');
+        const mo = ['','Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'][+m];
+        return mo + ' ' + y.slice(2);
+      });
+      values = periods.map(p => gm[p] ? +(gm[p]/1e6).toFixed(1) : null);
+      yoys = periods.map((p,i) => {
+        if (i === 0) return null;
+        const v = gm[p], pv = gm[periods[i-1]];
+        return (v && pv) ? +((v/pv - 1)*100).toFixed(1) : null;
+      });
+    }
+    title = gradName;
+    sub = 'Månadspromet zadnjih 24 mj. (M BAM)';
+
+  } else if (mode === 'gradyoy') {
+    // YoY tab - zadnjih 12 perioda
+    const gd = YOY_DATA.grad_data[gradName];
+    if (!gd) return;
+    const periods = YOY_DATA.periods;
+    labels = periods.map(p => MONTHS_LABEL[p] || p);
+    values = periods.map(p => gd[p]?.curr ? +(gd[p].curr/1e6).toFixed(1) : null);
+    yoys   = periods.map(p => gd[p]?.yoy ?? null);
+    title = gradName;
+    sub = 'Promet Mar 2025 – Feb 2026 (M BAM)';
+  }
+
+  if (!values.some(v => v != null)) return;
+
+  // Pozicija tooltipa
+  const margin = 16;
+  const ttW = 300, ttH = 180;
+  let left = e.clientX + 16;
+  let top  = e.clientY - 60;
+  if (left + ttW > window.innerWidth - margin) left = e.clientX - ttW - 16;
+  if (top + ttH > window.innerHeight - margin) top = window.innerHeight - ttH - margin;
+  if (top < margin) top = margin;
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top  = top + 'px';
+  tooltip.style.display = 'block';
+  ttName.textContent = title;
+  ttSub.textContent = sub;
+
+  // Uništi stari chart
+  if (ttChart) { ttChart.destroy(); ttChart = null; }
+
+  // Boje za YoY
+  const barColors = yoys.map(y =>
+    y == null ? 'rgba(26,86,219,0.15)' :
+    y >= 0 ? 'rgba(21,128,61,0.25)' : 'rgba(185,28,28,0.25)'
+  );
+
+  ttChart = new Chart(ttCanvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Promet',
+          data: values,
+          borderColor: '#1a56db',
+          backgroundColor: 'rgba(26,86,219,0.08)',
+          borderWidth: 2,
+          pointRadius: 2,
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'y',
+          spanGaps: true,
+          order: 1,
+        },
+        {
+          type: 'bar',
+          label: 'YoY %',
+          data: yoys,
+          backgroundColor: barColors,
+          borderRadius: 2,
+          yAxisID: 'y1',
+          order: 2,
+        }
+      ]
+    },
+    options: {
+      animation: false,
+      responsive: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#9ca3af',
+            font: { family: "'JetBrains Mono'", size: 8 },
+            maxRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 8,
+          },
+          grid: { display: false }
+        },
+        y: {
+          position: 'left',
+          ticks: {
+            color: '#1a56db',
+            font: { family: "'JetBrains Mono'", size: 8 },
+            maxTicksLimit: 4,
+          },
+          grid: { color: 'rgba(209,213,222,0.5)' }
+        },
+        y1: {
+          position: 'right',
+          ticks: {
+            color: '#15803d',
+            font: { family: "'JetBrains Mono'", size: 8 },
+            maxTicksLimit: 4,
+            callback: v => v != null ? (v > 0 ? '+' : '') + v.toFixed(0) + '%' : ''
+          },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+}
+
+function hideGradTooltip() {
+  ttTimeout = setTimeout(() => {
+    tooltip.style.display = 'none';
+    if (ttChart) { ttChart.destroy(); ttChart = null; }
+  }, 120);
+}
+
+// Delegirani event listener - hvata sve hover na td s data-grad atributom
+document.addEventListener('mouseover', e => {
+  const td = e.target.closest('[data-grad]');
+  if (td) {
+    const grad = td.dataset.grad;
+    const mode = td.dataset.mode || 'annual';
+    showGradTooltip(e, grad, mode);
+  }
+});
+
+document.addEventListener('mousemove', e => {
+  const td = e.target.closest('[data-grad]');
+  if (td && tooltip.style.display === 'block') {
+    const margin = 16;
+    const ttW = 300, ttH = 180;
+    let left = e.clientX + 16;
+    let top  = e.clientY - 60;
+    if (left + ttW > window.innerWidth - margin) left = e.clientX - ttW - 16;
+    if (top + ttH > window.innerHeight - margin) top = window.innerHeight - ttH - margin;
+    if (top < margin) top = margin;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = top + 'px';
+  }
+});
+
+document.addEventListener('mouseout', e => {
+  const td = e.target.closest('[data-grad]');
+  if (td) hideGradTooltip();
+});
+
+
+
+
+// ═══════════════════════ BHAS DATA RENDERER ═══════════════════════
+// index.html je u docs/docs/ a data/ je u korijenu -> ../../data/
+const DATA_BASE = 'https://aleo-claude.github.io/makro-bih/data/';
+
+const MONTH_NAMES = ['','Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
+
+function periodToLabel(p) {
+  // Konvertira "2024-01" ili "2024-1" → "Sij 24", "2024" → "2024"
+  if (!p) return p;
+  const s = String(p).trim();
+  // Format: 2024-1 ili 2024-01
+  if (/^\d{4}-\d{1,2}$/.test(s)) {
+    const [y, m] = s.split('-');
+    return MONTH_NAMES[parseInt(m)] + " '" + y.slice(2);
+  }
+  if (/^\d{4}[Qq]\d$/.test(s)) {
+    return s.replace(/(\d{4})([Qq])(\d)/, "Q$3 '$1").replace(/\d{4}/, y => y.slice(2));
+  }
+  return s;
+}
+
+function getRecentPeriods(seriesObj, n=60) {
+  // Uzmi zadnjih N perioda iz objekta {period: value}
+  // Normaliziraj za ispravno sortiranje (2026-2 -> 2026-02)
+  const sorted = Object.keys(seriesObj).sort((a, b) => {
+    const norm = s => {
+      if (/^\d{4}-\d{1,2}$/.test(s)) {
+        const [y, m] = s.split('-');
+        return y + '-' + m.padStart(2, '0');
+      }
+      return s;
+    };
+    return norm(a).localeCompare(norm(b));
+  });
+  return sorted.slice(-n);
+}
+
+function calcYoY(seriesObj, periods) {
+  // Izračunaj YoY za svaki period - podržava "2026-2" i "2026-02" formate
+  return periods.map(p => {
+    const yr = p.slice(0,4), rest = p.slice(4); // rest = "-2" ili "-02"
+    const prevP = (parseInt(yr)-1) + rest;
+    // Probaj i s i bez leading zero
+    const curr = seriesObj[p];
+    const prev = seriesObj[prevP] || seriesObj[prevP.replace(/-0(\d)$/, '-$1')];
+    return (curr && prev && prev !== 0) ? +((curr/prev - 1)*100).toFixed(2) : null;
+  });
+}
+
+function makeKPI(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map(item => `
+    <div class="kpi-card">
+      <div class="kpi-label">${item.label}</div>
+      <div class="kpi-value">${item.value}</div>
+      <div class="kpi-change ${item.changeClass || 'neu'}">${item.change || ''}</div>
+    </div>
+  `).join('');
+}
+
+function fmtNum(n, decimals=1) {
+  if (n == null) return '—';
+  return n.toLocaleString('bs-BA', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+}
+
+// ── MALOPRODAJA ────────────────────────────────────────────────
+let maloInited = false;
+
+async function initMaloprodaja() {
+  if (maloInited) return;
+  maloInited = true;
+
+  const statusEl = document.getElementById('malo-status');
+
+  try {
+    const r = await fetch(DATA_BASE + 'maloprodaja.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (data.error || !data.sheets) {
+      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
+      return;
+    }
+
+    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    // Uzmi RTI value sheet
+    const sheet = data.sheets['RTI value'] || Object.values(data.sheets)[0];
+    if (!sheet) return;
+
+    // Pronađi ukupnu/total seriju (npr. "ukupno 47")
+    const seriesKeys = Object.keys(sheet);
+    const totalKey = seriesKeys.find(k => 
+      k.toLowerCase().includes('total') || 
+      k.toLowerCase().includes('ukupno') ||
+      k.toLowerCase().startsWith('bih') ||
+      k === seriesKeys[0]
+    );
+    const totalSeries = sheet[totalKey];
+
+    // Zadnjih 60 perioda
+    const periods = getRecentPeriods(totalSeries, 60);
+    const values = periods.map(p => totalSeries[p]);
+    const yoys = calcYoY(totalSeries, periods);
+    const labels = periods.map(periodToLabel);
+
+    // KPI
+    const lastVal = values[values.length-1];
+    const lastYoY = yoys[yoys.length-1];
+    const avgYoY = yoys.filter(v => v != null).slice(-12).reduce((a,b) => a+b, 0) / 12;
+
+    makeKPI('malo-kpi', [
+      { label: 'Zadnji indeks', value: fmtNum(lastVal), change: periodToLabel(periods[periods.length-1]), changeClass: 'neu' },
+      { label: 'YoY zadnji', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
+        change: lastYoY > 0 ? 'Rast' : 'Pad', changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Prosjek YoY 12M', value: (avgYoY > 0 ? '+' : '') + fmtNum(avgYoY) + '%', changeClass: avgYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Perioda', value: periods.length, change: periods[0] + ' — ' + periods[periods.length-1], changeClass: 'neu' },
+    ]);
+
+    // Glavni chart — line
+    new Chart(document.getElementById('chartMalo'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: totalKey,
+          data: values,
+          borderColor: '#1a56db',
+          backgroundColor: 'rgba(26,86,219,0.06)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 1,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, legend: { display: false } },
+        scales: { ...chartDefaults.scales,
+          x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } }
+        }
+      }
+    });
+
+    // YoY chart
+    new Chart(document.getElementById('chartMaloYoY'), {
+      type: 'bar',
+      data: {
+        labels: labels.slice(-36),
+        datasets: [{
+          label: 'YoY %',
+          data: yoys.slice(-36),
+          backgroundColor: yoys.slice(-36).map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)'),
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, legend: { display: false } },
+        scales: { ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } }
+        }
+      }
+    });
+
+    // Pie — top 5 serija po zadnjoj vrijednosti
+    const top5 = seriesKeys.slice(0, 6).filter(k => k !== totalKey).slice(0, 5);
+    const lastPeriod = periods[periods.length - 1];
+    new Chart(document.getElementById('chartMaloPie'), {
+      type: 'doughnut',
+      data: {
+        labels: top5.map(k => k.length > 30 ? k.slice(0, 28) + '…' : k),
+        datasets: [{
+          data: top5.map(k => sheet[k]?.[lastPeriod] || 0),
+          backgroundColor: ['#1a56db','#0891b2','#15803d','#b45309','#7c3aed'],
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { position: 'right', labels: { color: '#374151', font: { family: "'Source Sans 3'", size: 11 }, boxWidth: 12 } }
+        }
+      }
+    });
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Greška pri učitavanju: ' + e.message;
+    console.error('Maloprodaja error:', e);
+  }
+}
+
+// ── TURIZAM ────────────────────────────────────────────────────
+let turInited = false;
+
+async function initTurizam() {
+  if (turInited) return;
+  turInited = true;
+
+  const statusEl = document.getElementById('tur-status');
+
+  try {
+    const r = await fetch(DATA_BASE + 'turizam.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (data.error || !data.sheets) {
+      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
+      return;
+    }
+
+    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    const sheet = data.sheets['TUR 01'] || Object.values(data.sheets)[0];
+    if (!sheet) return;
+
+    const seriesKeys = Object.keys(sheet);
+
+    // Pronađi ključne serije
+    const arrivals = seriesKeys.find(k => k.toLowerCase().includes('arriv') || k.toLowerCase().includes('dolaz') || k === seriesKeys[0]);
+    const nights = seriesKeys.find(k => k.toLowerCase().includes('night') || k.toLowerCase().includes('noć') || k === seriesKeys[1]);
+    const domestic = seriesKeys.find(k => k.toLowerCase().includes('domest') || k.toLowerCase().includes('domać'));
+    const foreign = seriesKeys.find(k => k.toLowerCase().includes('foreign') || k.toLowerCase().includes('strani'));
+
+    const mainSeries = sheet[arrivals] || {};
+    const periods = getRecentPeriods(mainSeries, 72);
+    const labels = periods.map(periodToLabel);
+
+    const lastP = periods[periods.length-1];
+    const lastArrivals = mainSeries[lastP];
+    const lastNights = nights ? sheet[nights]?.[lastP] : null;
+    const arrYoY = calcYoY(mainSeries, periods);
+    const lastYoY = arrYoY[arrYoY.length-1];
+
+    makeKPI('tur-kpi', [
+      { label: 'Dolasci zadnji', value: lastArrivals ? fmtNum(lastArrivals/1000, 0) + 'K' : '—',
+        change: periodToLabel(lastP), changeClass: 'neu' },
+      { label: 'Noćenja zadnji', value: lastNights ? fmtNum(lastNights/1000, 0) + 'K' : '—', changeClass: 'neu' },
+      { label: 'YoY dolasci', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
+        changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Perioda podataka', value: periods.length, change: periods[0] + ' — ' + lastP, changeClass: 'neu' },
+    ]);
+
+    // Glavni chart
+    const datasets = [
+      { label: arrivals || 'Dolasci', data: periods.map(p => mainSeries[p]), borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }
+    ];
+    if (nights && sheet[nights]) {
+      datasets.push({ label: nights, data: periods.map(p => sheet[nights][p]), borderColor: '#0891b2', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 1 });
+    }
+
+    new Chart(document.getElementById('chartTur'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        ...chartDefaults,
+        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } } }
+      }
+    });
+
+    // Pie — domaći vs strani
+    if (domestic && foreign) {
+      new Chart(document.getElementById('chartTurPie'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Domaći', 'Strani'],
+          datasets: [{ data: [sheet[domestic]?.[lastP] || 0, sheet[foreign]?.[lastP] || 0], backgroundColor: ['#1a56db', '#0891b2'] }]
+        },
+        options: { plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 12 } } } } }
+      });
+    }
+
+    // Sezonalnost — prosječna noćenja po mjesecu
+    const monthData = Array(12).fill(0).map(() => ({ sum: 0, count: 0 }));
+    if (nights) {
+      Object.entries(sheet[nights] || {}).forEach(([p, v]) => {
+        if (/^\d{4}-\d{2}$/.test(p) && v) {
+          const m = parseInt(p.slice(5)) - 1;
+          monthData[m].sum += v;
+          monthData[m].count++;
+        }
+      });
+    }
+    const monthAvg = monthData.map(d => d.count ? +(d.sum/d.count).toFixed(0) : null);
+
+    new Chart(document.getElementById('chartTurSeason'), {
+      type: 'bar',
+      data: {
+        labels: MONTH_NAMES.slice(1),
+        datasets: [{ label: 'Prosj. noćenja', data: monthAvg, backgroundColor: '#0891b2', borderRadius: 4 }]
+      },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+    });
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Greška: ' + e.message;
+    console.error('Turizam error:', e);
+  }
+}
+
+// ── INDUSTRIJA ─────────────────────────────────────────────────
+let indInited = false;
+
+async function initIndustrija() {
+  if (indInited) return;
+  indInited = true;
+
+  const statusEl = document.getElementById('ind-status');
+
+  try {
+    const r = await fetch(DATA_BASE + 'industrija.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (data.error || !data.sheets) {
+      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
+      return;
+    }
+
+    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    const sheet = data.sheets['BIH IPI'] || Object.values(data.sheets)[0];
+    if (!sheet) return;
+
+    const seriesKeys = Object.keys(sheet);
+    const totalKey = seriesKeys.find(k => k === 'C' || k.toLowerCase().includes('total') || k === seriesKeys[0]);
+    const totalSeries = sheet[totalKey];
+
+    const periods = getRecentPeriods(totalSeries, 60);
+    const values = periods.map(p => totalSeries[p]);
+    const yoys = calcYoY(totalSeries, periods);
+    const labels = periods.map(periodToLabel);
+
+    const lastVal = values[values.length-1];
+    const lastYoY = yoys[yoys.length-1];
+    const avgYoY12 = yoys.filter(v => v != null).slice(-12).reduce((a,b) => a+b, 0) / 12;
+
+    makeKPI('ind-kpi', [
+      { label: 'Zadnji indeks', value: fmtNum(lastVal), change: periodToLabel(periods[periods.length-1]), changeClass: 'neu' },
+      { label: 'YoY zadnji', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
+        changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Prosjek YoY 12M', value: (avgYoY12 > 0 ? '+' : '') + fmtNum(avgYoY12) + '%', changeClass: avgYoY12 > 0 ? 'pos' : 'neg' },
+      { label: 'Serija podataka', value: seriesKeys.length + ' sektora', changeClass: 'neu' },
+    ]);
+
+    // Glavni chart
+    const colors = ['#1a56db','#0891b2','#15803d','#b45309','#7c3aed'];
+    const topSeries = seriesKeys.slice(0, 5);
+
+    new Chart(document.getElementById('chartInd'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: topSeries.map((k, i) => ({
+          label: k,
+          data: periods.map(p => sheet[k]?.[p] ?? null),
+          borderColor: colors[i],
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          borderWidth: i === 0 ? 2.5 : 1.5,
+          pointRadius: 0,
+        }))
+      },
+      options: {
+        ...chartDefaults,
+        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } } }
+      }
+    });
+
+    // YoY
+    new Chart(document.getElementById('chartIndYoY'), {
+      type: 'bar',
+      data: {
+        labels: labels.slice(-36),
+        datasets: [{ label: 'YoY %', data: yoys.slice(-36), backgroundColor: yoys.slice(-36).map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)'), borderRadius: 3 }]
+      },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } } }
+      }
+    });
+
+    // Pie — zadnji period po sektoru
+    const lastP = periods[periods.length-1];
+    const top5 = seriesKeys.filter(k => k !== totalKey).slice(0, 5);
+    new Chart(document.getElementById('chartIndPie'), {
+      type: 'doughnut',
+      data: {
+        labels: top5.map(k => k.length > 25 ? k.slice(0,23)+'…' : k),
+        datasets: [{ data: top5.map(k => Math.abs(sheet[k]?.[lastP] || 0)), backgroundColor: colors }]
+      },
+      options: { plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 11 } } } } }
+    });
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Greška: ' + e.message;
+    console.error('Industrija error:', e);
+  }
+}
+
+// ── BHAS init pozivi - dodano direktno na kraj navTo ──────────
+
+</script>
+</body>
+</html>
