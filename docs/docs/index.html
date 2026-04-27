@@ -2,6 +2,9 @@
 <html lang="bs">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Makro FBiH — Ekonomski podaci</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1426,7 +1429,7 @@ function initGradChips() {
 // ═══════════════════════ YOY TABLE ═══════════════════════
 function renderYoYTable() {
   const yrFilter = document.getElementById('yoy-year-filter').value;
-  const q = document.getElementById('yoy-search').value.toLowerCase();
+  const q = (document.getElementById('yoy-search')?.value || '').toLowerCase();
   const tbody = document.getElementById('yoy-tbody');
 
   let periods = DATA.all_periods;
@@ -1511,19 +1514,10 @@ function initMonthlySummary() {
 
 // ═══════════════════════ INIT ═══════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // Annual tab
+  // Samo annual tab inicijaliziramo odmah (aktivan pri učitavanju)
   renderAnnualTable();
   initAnnualCharts();
-
-  // Monthly tab
-  initMonthlySummary();
-  updateTrailChart();
-  updateYoYChart();
-  initGradChips();
-  updateGradChart();
-  renderYoYTable();
-  initGradYoYSelect();
-  renderGradYoY();
+  // Monthly i GradYoY tabovi se inicijaliziraju lazy u switchSubTab()
 });
 
 
