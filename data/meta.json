@@ -1,20 +1,20 @@
 {
-  "last_run": "2026-05-07T15:56:11.788315",
-  "updated": "2026-05-07",
+  "last_run": "2026-05-08T12:17:06.881515",
+  "updated": "2026-05-08",
   "datasets": {
     "maloprodaja": {
       "name": "Indeksi prometa trgovine na malo",
-      "updated": "2026-05-07",
+      "updated": "2026-05-08",
       "has_data": true,
       "has_error": false,
       "size_kb": 321
     },
     "turizam": {
       "name": "Turizam — dolasci i noćenja",
-      "updated": "2026-05-07",
+      "updated": "2026-05-08",
       "has_data": true,
       "has_error": false,
-      "size_kb": 373
+      "size_kb": 375
     },
     "cpi": {
       "name": "Indeks potrošačkih cijena (CPI)",
@@ -25,7 +25,7 @@
     },
     "industrija": {
       "name": "Indeks industrijske proizvodnje",
-      "updated": "2026-05-07",
+      "updated": "2026-05-08",
       "has_data": true,
       "has_error": false,
       "size_kb": 330
