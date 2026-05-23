@@ -564,6 +564,11 @@ input[type="text"] { width: 200px; }
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Vanjska trgovina</div>
+    <div class="nav-item" onclick="navTo('vanjska_trgovina', this)" data-page="vanjska_trgovina">
+      <span class="nav-icon">🚢</span>
+      Vanjska trgovina
+      <span class="nav-badge">BHAS</span>
+    </div>
     <div class="nav-item disabled">
       <span class="nav-icon">🚢</span>
       Izvoz i uvoz
@@ -659,8 +664,8 @@ input[type="text"] { width: 200px; }
           <div class="chart-wrap"><canvas id="chartAnnualGrowth"></canvas></div>
         </div>
         <div class="chart-card span2">
-          <div class="cc-header"><h3>Top 15 općina — Promet 2025</h3></div>
-          <p>Godišnji promet u M BAM · 2021–2025</p>
+          <div class="cc-header"><h3>Top 15 općina — Trend prometa 2022–2025</h3></div>
+          <p>Godišnji promet u M BAM po općini · svaka linija = jedna općina</p>
           <div class="chart-wrap tall"><canvas id="chartTop15"></canvas></div>
         </div>
         <div class="chart-card">
@@ -837,14 +842,7 @@ input[type="text"] { width: 200px; }
   </div><!-- /page-fiskalni -->
 
   <!-- ══ PLACEHOLDER SEKCIJE ══════════════════════════════════ -->
-  <div id="page-maloprodaja" class="section-page">
-    <div class="placeholder-page">
-      <div class="ph-icon">🛒</div>
-      <h3>Maloprodajni indeks</h3>
-      <p>Podaci o promjenama maloprodajnog prometa u FBiH bit će dostupni uskoro.</p>
-      <span class="ph-badge">U pripremi</span>
-    </div>
-  </div>
+  
 
 
   <!-- ══ SEKCIJA: MALOPRODAJA ═══════════════════════════════ -->
@@ -861,8 +859,8 @@ input[type="text"] { width: 200px; }
         <div class="chart-wrap tall"><canvas id="chartMalo"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="cc-header"><h3>YoY stopa rasta</h3></div>
-        <p>Godišnja promjena (%)</p>
+        <div class="cc-header"><h3>YoY stopa rasta izvoza</h3></div>
+        <p>Robna razmjena po sektoru (mlrd BAM)</p>
         <div class="chart-wrap"><canvas id="chartMaloYoY"></canvas></div>
       </div>
       <div class="chart-card">
@@ -915,7 +913,7 @@ input[type="text"] { width: 200px; }
         <div class="chart-wrap tall"><canvas id="chartInd"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="cc-header"><h3>YoY stopa rasta</h3></div>
+        <div class="cc-header"><h3>YoY stopa rasta izvoza</h3></div>
         <p>Godišnja promjena (%)</p>
         <div class="chart-wrap"><canvas id="chartIndYoY"></canvas></div>
       </div>
@@ -928,6 +926,47 @@ input[type="text"] { width: 200px; }
     <div id="ind-status" class="note">Učitavam podatke...</div>
   </div>
 
+
+  <!-- ══ SEKCIJA: VANJSKA TRGOVINA ════════════════════════════ -->
+  <div id="page-vanjska_trgovina" class="section-page">
+    <div class="page-header">
+      <h2>Vanjska trgovina BiH</h2>
+      <p>Izvoz i uvoz roba · Izvor: BHAS ETR_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="vt-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header">
+          <h3>Izvoz BiH — mjesečno (ETR_01)</h3>
+          <div class="chip-group" id="vt-range-chips">
+            <div class="chip active" onclick="setVtRange(60, this)">5 god</div>
+            <div class="chip" onclick="setVtRange(36, this)">3 god</div>
+            <div class="chip" onclick="setVtRange(24, this)">2 god</div>
+            <div class="chip" onclick="setVtRange(999, this)">Sve</div>
+          </div>
+        </div>
+        <p>Izvoz roba po HS poglavljima · mlrd BAM · uvoz nije dostupan</p>
+        <div class="chart-wrap tall"><canvas id="chartVtMain"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Godišnji izvoz BiH</h3></div>
+        <p>Godišnji izvoz roba (mlrd BAM) · uvoz nije dostupan u ETR_01</p>
+        <div class="chart-wrap"><canvas id="chartVtDeficit"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY stopa rasta izvoza</h3></div>
+        <p>Godišnja promjena izvoza (%)</p>
+        <div class="chart-wrap"><canvas id="chartVtPokrivenost"></canvas></div>
+      </div>
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Top HS poglavlja — zadnjih 12 mj.</h3></div>
+        <p>Godišnja promjena (%)</p>
+        <div class="chart-wrap"><canvas id="chartVtYoY"></canvas></div>
+      </div>
+    </div>
+    <div id="vt-status" class="note">Učitavam podatke...</div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -935,6 +974,7 @@ input[type="text"] { width: 200px; }
 const PAGE_TITLES = {
   fiskalni: 'Fiskalni promet',
   maloprodaja: 'Maloprodajni indeks',
+  vanjska_trgovina: 'Vanjska trgovina',
 };
 
 function navTo(pageId, el) {
@@ -954,6 +994,7 @@ function navTo(pageId, el) {
   if (pageId === 'maloprodaja') initMaloprodaja();
   else if (pageId === 'turizam') initTurizam();
   else if (pageId === 'industrija') initIndustrija();
+  else if (pageId === 'vanjska_trgovina') initVanjskaTrgovina();
 }
 
 // Sub-tab switching unutar fiskalni sekcije
@@ -1132,7 +1173,7 @@ function initAnnualCharts() {
       datasets: [{
         label: 'Ukupni promet (mlrd BAM)',
         data: totals,
-        backgroundColor: ['rgba(26,86,219,0.2)','rgba(26,86,219,0.4)','rgba(26,86,219,0.6)','rgba(26,86,219,1)'],
+        backgroundColor: ['rgba(26,86,219,0.15)','rgba(26,86,219,0.3)','rgba(26,86,219,0.5)','rgba(26,86,219,0.65)','rgba(26,86,219,0.8)','rgba(26,86,219,1)'],
         borderColor: '#1a56db',
         borderWidth: 1,
         borderRadius: 4,
@@ -1141,7 +1182,7 @@ function initAnnualCharts() {
     options: {
       ...chartDefaults,
       plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(2) + ' mlrd BAM' } } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' mlrd' } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' mlrd' } } }
     }
   });
 
@@ -1170,26 +1211,42 @@ function initAnnualCharts() {
   });
 
   const top15 = DATA.annual_rows.slice(0, 15);
+  const TOP15_COLORS = ['#1a56db','#0891b2','#e02424','#7c3aed','#c2410c',
+    '#15803d','#1d4ed8','#be185d','#b45309','#0e7490',
+    '#4d7c0f','#6d28d9','#be123c','#0369a1','#92400e'];
+  const TOP15_YEARS = ['2022','2023','2024','2025'];
+
   new Chart(document.getElementById('chartTop15'), {
-    type: 'bar',
+    type: 'line',
     data: {
-      labels: top15.map(r => r.grad.replace(' SARAJEVO','').replace('SARAJEVO ','SJJ ')),
-      datasets: [
-        { label: '2021', data: top15.map(r => (r['2021']||0)/1e6), backgroundColor: 'rgba(26,86,219,0.15)', borderRadius: 2 },
-        { label: '2022', data: top15.map(r => (r['2022']||0)/1e6), backgroundColor: 'rgba(26,86,219,0.4)', borderRadius: 2 },
-        { label: '2023', data: top15.map(r => (r['2023']||0)/1e6), backgroundColor: 'rgba(8,145,178,0.35)', borderRadius: 2 },
-        { label: '2024', data: top15.map(r => (r['2024']||0)/1e6), backgroundColor: 'rgba(8,145,178,0.6)', borderRadius: 2 },
-        { label: '2025', data: top15.map(r => (r['2025']||0)/1e6), backgroundColor: 'rgba(8,145,178,0.9)', borderRadius: 2 },
-      ]
+      labels: TOP15_YEARS,
+      datasets: top15.map((r, i) => ({
+        label: r.grad.replace(' SARAJEVO','').replace('SARAJEVO ','SJJ ').replace('NOVI GRAD','N.GRAD'),
+        data: TOP15_YEARS.map(y => r[y] ? +(r[y]/1e6).toFixed(1) : null),
+        borderColor: TOP15_COLORS[i],
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.2,
+      }))
     },
     options: {
       ...chartDefaults,
-      indexAxis: 'x',
-      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)} M BAM` } } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' M' } } }
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: true, position: 'right',
+          labels: { color: '#374151', font: { family: "'Source Sans 3'", size: 10 }, boxWidth: 12, padding: 8 }
+        },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(0)} M BAM` } }
+      },
+      scales: {
+        ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' M' } }
+      }
     }
   });
-
 
   // ── Top 5 Promet 2025 ─────────────────────────────────────────
   const top5p = DATA.annual_rows
@@ -1222,7 +1279,7 @@ function initAnnualCharts() {
         tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(0)} M BAM` } }
       },
       scales: {
-        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v.toFixed(0)+' M' } },
+        x: { ...chartDefaults.scales.x, min: 0, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v.toFixed(0)+' M' } },
         y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, font: { family: "'Source Sans 3'", size: 11 }, color: '#374151' } }
       }
     }
@@ -1913,10 +1970,11 @@ const DATA_BASE = 'https://aleo-claude.github.io/makro-bih/data/';
 const MONTH_NAMES = ['','Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
 
 function periodToLabel(p) {
-  // Konvertira "2024-01" → "Sij 24", "2024" → "2024", "2024Q1" → "Q1 24"
+  // Konvertira "2024-01" ili "2024-1" → "Sij 24", "2024" → "2024"
   if (!p) return p;
   const s = String(p).trim();
-  if (/^\d{4}-\d{2}$/.test(s)) {
+  // Format: 2024-1 ili 2024-01
+  if (/^\d{4}-\d{1,2}$/.test(s)) {
     const [y, m] = s.split('-');
     return MONTH_NAMES[parseInt(m)] + " '" + y.slice(2);
   }
@@ -1928,16 +1986,28 @@ function periodToLabel(p) {
 
 function getRecentPeriods(seriesObj, n=60) {
   // Uzmi zadnjih N perioda iz objekta {period: value}
-  const sorted = Object.keys(seriesObj).sort();
+  // Normaliziraj za ispravno sortiranje (2026-2 -> 2026-02)
+  const sorted = Object.keys(seriesObj).sort((a, b) => {
+    const norm = s => {
+      if (/^\d{4}-\d{1,2}$/.test(s)) {
+        const [y, m] = s.split('-');
+        return y + '-' + m.padStart(2, '0');
+      }
+      return s;
+    };
+    return norm(a).localeCompare(norm(b));
+  });
   return sorted.slice(-n);
 }
 
 function calcYoY(seriesObj, periods) {
-  // Izračunaj YoY za svaki period
+  // Izračunaj YoY za svaki period - podržava "2026-2" i "2026-02" formate
   return periods.map(p => {
-    const yr = p.slice(0,4), rest = p.slice(4);
+    const yr = p.slice(0,4), rest = p.slice(4); // rest = "-2" ili "-02"
     const prevP = (parseInt(yr)-1) + rest;
-    const curr = seriesObj[p], prev = seriesObj[prevP];
+    // Probaj i s i bez leading zero
+    const curr = seriesObj[p];
+    const prev = seriesObj[prevP] || seriesObj[prevP.replace(/-0(\d)$/, '-$1')];
     return (curr && prev && prev !== 0) ? +((curr/prev - 1)*100).toFixed(2) : null;
   });
 }
@@ -1969,7 +2039,7 @@ async function initMaloprodaja() {
   const statusEl = document.getElementById('malo-status');
 
   try {
-    const r = await fetch(DATA_BASE + 'maloprodaja.json');
+    const r = await fetch(DATA_BASE + 'maloprodaja.json?v=202604271208');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
 
@@ -1985,9 +2055,14 @@ async function initMaloprodaja() {
     const sheet = data.sheets['RTI value'] || Object.values(data.sheets)[0];
     if (!sheet) return;
 
-    // Pronađi ukupnu/total seriju
+    // Pronađi ukupnu/total seriju (npr. "ukupno 47")
     const seriesKeys = Object.keys(sheet);
-    const totalKey = seriesKeys.find(k => k.toLowerCase().includes('total') || k.toLowerCase().includes('ukupno') || k === seriesKeys[0]);
+    const totalKey = seriesKeys.find(k => 
+      k.toLowerCase().includes('total') || 
+      k.toLowerCase().includes('ukupno') ||
+      k.toLowerCase().startsWith('bih') ||
+      k === seriesKeys[0]
+    );
     const totalSeries = sheet[totalKey];
 
     // Zadnjih 60 perioda
@@ -2090,7 +2165,7 @@ async function initTurizam() {
   const statusEl = document.getElementById('tur-status');
 
   try {
-    const r = await fetch(DATA_BASE + 'turizam.json');
+    const r = await fetch(DATA_BASE + 'turizam.json?v=202604271208');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
 
@@ -2199,7 +2274,7 @@ async function initIndustrija() {
   const statusEl = document.getElementById('ind-status');
 
   try {
-    const r = await fetch(DATA_BASE + 'industrija.json');
+    const r = await fetch(DATA_BASE + 'industrija.json?v=202604271208');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
 
@@ -2290,6 +2365,382 @@ async function initIndustrija() {
 }
 
 // ── BHAS init pozivi - dodano direktno na kraj navTo ──────────
+
+
+
+// ═══════════════════════ VANJSKA TRGOVINA ═══════════════════════
+let vtInited = false;
+let vtChartMain = null;
+let vtRange = 60;
+let vtAllData = null;
+
+function setVtRange(n, el) {
+  vtRange = n;
+  document.querySelectorAll('#vt-range-chips .chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (vtAllData) renderVtCharts(vtAllData);
+}
+
+async function initVanjskaTrgovina() {
+  if (vtInited) return;
+  vtInited = true;
+  const statusEl = document.getElementById('vt-status');
+
+  const HS_NAMES = {"27":"Mineralna goriva","94":"Namještaj","84":"Strojevi/meh.","44":"Drvo i drvni prod.","76":"Aluminij","85":"El. uređaji","73":"Željezni prod.","64":"Obuća","72":"Čelik/željezo","28":"Kem. proizvodi","39":"Plastika","87":"Vozila","62":"Odjeća tkana","48":"Papir","61":"Odjeća pletena"};
+
+  try {
+    statusEl.textContent = 'Učitavam podatke...';
+    
+    // Učitaj i detalje (izvoz/uvoz zasebno iz PDF saopštenja)
+    let detalji = null;
+    try {
+      const dr = await fetch(DATA_BASE + 'vt_detalji.json');
+      if (dr.ok) detalji = await dr.json();
+    } catch(e) {}
+    
+    const resp = await fetch(DATA_BASE + 'vanjska_trgovina.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+
+    const d = json.data;
+    if (!d) throw new Error('Format podataka nije prepoznat');
+
+    // UK = izvoz (ETR_01), EX = uvoz (ETR_02) - potvrđeno s BHAS PDF saopštenjima
+    // Koristimo direktno bez obzira na has_ex/has_im zastavice
+    const hasDetalji = false;
+    const hasEx = d.UK && Object.keys(d.UK).length > 0;
+    const hasIm = d.EX && Object.keys(d.EX).length > 0;
+    
+    // Prenamjenimo: UK = izvoz, napravimo "kumulativni->mjesečni" iz EX
+    const exCumul = d.EX || {};
+    // Izračunaj mjesečni izvoz iz kumulativa (jan=sam jan, feb=feb-jan, itd.)
+    const exMonthly = {};
+    const cumPeriods = Object.keys(exCumul).sort((a,b) => {
+      const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
+      return n(a).localeCompare(n(b));
+    });
+    cumPeriods.forEach((p, i) => {
+      const [yr, mo] = p.split('-');
+      if (mo === '1' || mo === '01') {
+        exMonthly[p] = exCumul[p]; // januar = kumulativ = sam januar
+      } else {
+        // Pronađi prethodni period
+        const prevMo = parseInt(mo) - 1;
+        const prevP = yr + '-' + prevMo;
+        if (exCumul[prevP] != null) {
+          exMonthly[p] = exCumul[p] - exCumul[prevP];
+        }
+      }
+    });
+
+    statusEl.textContent = `✓ ${json.updated} · Izvoz: ETR_01 · Uvoz: ETR_02 · Deficit i pokrivenost dostupni`;
+    statusEl.style.borderLeftColor = 'var(--pos)';
+
+    // Sortirani periodi
+    const periods = json.periods || Object.keys(d.UK||{}).sort((a,b) => {
+      const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
+      return n(a).localeCompare(n(b));
+    });
+    const labels = periods.map(p => periodToLabel(p));
+
+    const uk = {}; // ukupno - računamo iz ex+im
+    // UK = izvoz (ETR_01), EX = uvoz (ETR_02)
+    const ex = d.UK || {};  // izvoz
+    const im = d.EX || {};  // uvoz (ETR_02)
+
+    const ukVals = periods.map(p => uk[p] ? +(uk[p]/1e9).toFixed(3) : null);
+    const exVals = periods.map(p => ex[p] ? +(ex[p]/1e9).toFixed(3) : null);
+    const imVals = periods.map(p => im[p] ? +(im[p]/1e9).toFixed(3) : null);
+
+    // Deficit i pokrivenost
+    const deficit = periods.map((p,i) => (imVals[i]!=null && exVals[i]!=null) ? +((imVals[i]-exVals[i]).toFixed(3)) : null);
+    const pokr = periods.map((p,i) => (imVals[i] && exVals[i]) ? +((exVals[i]/imVals[i]*100).toFixed(1)) : null);
+
+    // YoY za UK
+    const ukYoY = periods.map(p => {
+      const [yr,mo] = p.split('-');
+      const prev = (parseInt(yr)-1)+'-'+mo;
+      const curr = uk[p], prevV = uk[prev];
+      return (curr&&prevV) ? +((curr/prevV-1)*100).toFixed(2) : null;
+    });
+
+    // Godišnji
+    const annual = d.annual || {};
+    const annYears = Object.keys(annual).sort().slice(-9);
+
+    // KPI
+    const lastP = periods[periods.length-1];
+    const lastEx = ex[lastP], lastIm = im[lastP], lastUk = uk[lastP];
+    const lastDeficit = (lastIm && lastEx) ? lastIm - lastEx : null;
+    const lastPokr = (lastIm && lastEx) ? (lastEx/lastIm*100) : null;
+    const lastYoY = ukYoY[ukYoY.length-1];
+
+    makeKPI('vt-kpi', [
+      { label: hasEx ? 'Izvoz' : 'Ukupna razmjena',
+        value: (hasEx ? lastEx : lastUk) ? ((hasEx?lastEx:lastUk)/1e9).toFixed(2)+' mlrd' : '—',
+        change: periodToLabel(lastP), changeClass: 'neu' },
+      { label: hasIm ? 'Uvoz' : 'YoY zadnji',
+        value: hasIm ? (lastIm?(lastIm/1e9).toFixed(2)+' mlrd':'—') : (lastYoY!=null?(lastYoY>0?'+':'')+lastYoY.toFixed(1)+'%':'—'),
+        changeClass: hasIm ? 'neg' : (lastYoY>0?'pos':'neg') },
+      { label: 'Deficit (uvoz-izvoz)',
+        value: lastDeficit != null ? (lastDeficit/1e9).toFixed(2)+' mlrd' : (lastYoY!=null?(lastYoY>0?'+':'')+lastYoY.toFixed(1)+'%':'—'),
+        changeClass: 'neg' },
+      { label: 'Pokrivenost uvoza',
+        value: lastPokr != null ? lastPokr.toFixed(1)+'%' : '—',
+        change: 'Izvoz / Uvoz × 100', changeClass: lastPokr > 70 ? 'pos' : 'neg' },
+    ]);
+
+    // GLAVNI CHART
+    const showPeriods = vtRange >= 999 ? periods : periods.slice(-vtRange);
+    const showLabels = showPeriods.map(p => periodToLabel(p));
+
+    if (vtChartMain) vtChartMain.destroy();
+
+    if (hasEx && hasIm) {
+      // Prikaži izvoz i uvoz zasebno
+      vtChartMain = new Chart(document.getElementById('chartVtMain'), {
+        type: 'line',
+        data: { labels: showLabels, datasets: [
+          { label: 'Izvoz', data: showPeriods.map(p=>ex[p]?+(ex[p]/1e9).toFixed(3):null),
+            borderColor: '#15803d', backgroundColor: 'rgba(21,128,61,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
+          { label: 'Uvoz', data: showPeriods.map(p=>im[p]?+(im[p]/1e9).toFixed(3):null),
+            borderColor: '#b91c1c', backgroundColor: 'rgba(185,28,28,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
+        ]},
+        options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
+          plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } } },
+          scales: { ...chartDefaults.scales,
+            x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } },
+            y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
+          }
+        }
+      });
+    } else {
+      // Samo ukupna razmjena
+      vtChartMain = new Chart(document.getElementById('chartVtMain'), {
+        type: 'line',
+        data: { labels: showLabels, datasets: [
+          { label: 'Ukupna razmjena', data: showPeriods.map(p=>uk[p]?+(uk[p]/1e9).toFixed(3):null),
+            borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }
+        ]},
+        options: { ...chartDefaults,
+          plugins: { ...chartDefaults.plugins, legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } } },
+          scales: { ...chartDefaults.scales,
+            x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } },
+            y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
+          }
+        }
+      });
+    }
+
+    // GODIŠNJI BAR CHART
+    new Chart(document.getElementById('chartVtDeficit'), {
+      type: 'bar',
+      data: { labels: annYears,
+        datasets: hasEx && hasIm ? [
+          { label: 'Izvoz', data: annYears.map(y => annual[y]?.ex || null), backgroundColor: 'rgba(21,128,61,0.8)', borderRadius: 3 },
+          { label: 'Uvoz', data: annYears.map(y => annual[y]?.im || null), backgroundColor: 'rgba(185,28,28,0.7)', borderRadius: 3 },
+        ] : [
+          { label: 'Ukupna razmjena', data: annYears.map(y => annual[y]?.uk || null),
+            backgroundColor: 'rgba(26,86,219,0.8)', borderRadius: 4 }
+        ]
+      },
+      options: { ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} mlrd BAM` } } },
+        scales: { ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+' mlrd' } }
+        }
+      }
+    });
+
+    // DEFICIT ILI YOY CHART
+    if (hasEx && hasIm) {
+      new Chart(document.getElementById('chartVtPokrivenost'), {
+        type: 'bar',
+        data: { labels: labels.slice(-36),
+          datasets: [{ label: 'Deficit (mlrd BAM)', data: deficit.slice(-36),
+            backgroundColor: deficit.slice(-36).map(v => v > 0 ? 'rgba(185,28,28,0.7)' : 'rgba(21,128,61,0.7)'),
+            borderRadius: 3 }]
+        },
+        options: { ...chartDefaults,
+          plugins: { ...chartDefaults.plugins, legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } } },
+          scales: { ...chartDefaults.scales,
+            y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
+          }
+        }
+      });
+    } else {
+      new Chart(document.getElementById('chartVtPokrivenost'), {
+        type: 'bar',
+        data: { labels: labels.slice(-36),
+          datasets: [{ label: 'YoY %', data: ukYoY.slice(-36),
+            backgroundColor: ukYoY.slice(-36).map(v => v>=0?'rgba(21,128,61,0.7)':'rgba(185,28,28,0.7)'),
+            borderRadius: 3 }]
+        },
+        options: { ...chartDefaults,
+          plugins: { ...chartDefaults.plugins, legend: { display: false } },
+          scales: { ...chartDefaults.scales,
+            y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } }
+          }
+        }
+      });
+    }
+
+    // TOP HS POGLAVLJA
+    const hsKeys = Object.keys(d).filter(k => !['UK','EX','IM','annual'].includes(k));
+    const last12 = periods.slice(-12);
+    const hsTotals = hsKeys.map(k => ({
+      key: k, name: HS_NAMES[k]||'HS '+k,
+      val: last12.reduce((s,p) => s+(d[k][p]||0), 0)
+    })).sort((a,b) => b.val-a.val).slice(0,10);
+
+    new Chart(document.getElementById('chartVtYoY'), {
+      type: 'bar',
+      data: { labels: hsTotals.map(h => h.name),
+        datasets: [{ label: 'Zadnjih 12mj (mlrd BAM)',
+          data: hsTotals.map(h => +(h.val/1e9).toFixed(2)),
+          backgroundColor: 'rgba(26,86,219,0.75)', borderRadius: 4 }]
+      },
+      options: { ...chartDefaults, indexAxis: 'y',
+        plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(2)} mlrd BAM` } } },
+        scales: { ...chartDefaults.scales,
+          x: { ...chartDefaults.scales.x, min: 0, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v+' mlrd' } },
+          y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, color: '#374151' } }
+        }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('vt-status').textContent = 'Greška: ' + e.message;
+    console.error('VT error:', e);
+  }
+}
+
+function renderVtCharts(d) {
+  const { s1, s2, sUk, exKey, imKey, ukKey, data } = d;
+
+  // Periodi — zadnjih N, sortirano
+  const allPeriods = Object.keys(sUk).sort((a, b) => {
+    const norm = s => { const [y,m] = s.split('-'); return y + '-' + (m||'').padStart(2,'0'); };
+    return norm(a).localeCompare(norm(b));
+  });
+  const periods = vtRange >= 999 ? allPeriods : allPeriods.slice(-vtRange);
+  const labels = periods.map(p => periodToLabel(p));
+
+  const ex = periods.map(p => s1[p] ? +(s1[p]/1e9).toFixed(3) : null);
+  const im = periods.map(p => s2[p] ? +(s2[p]/1e9).toFixed(3) : null);
+  const uk = periods.map(p => sUk[p] ? +(sUk[p]/1e9).toFixed(3) : null);
+
+  // Deficit = uvoz - izvoz
+  const deficit = periods.map((p, i) => (im[i] != null && ex[i] != null) ? +((im[i] - ex[i])).toFixed(3) : null);
+
+  // Pokrivenost = izvoz/uvoz * 100
+  const pokr = periods.map((p, i) => (im[i] && ex[i]) ? +((ex[i]/im[i])*100).toFixed(1) : null);
+
+  // YoY
+  const calcYoYArr = (series, allPers, selPers) => selPers.map(p => {
+    const yr = p.slice(0,4), rest = p.slice(4);
+    const prev = (parseInt(yr)-1) + rest;
+    const curr = series[p], prevV = series[prev] || series[prev.replace(/-0(\d)$/, '-$1')];
+    return (curr && prevV) ? +((curr/prevV - 1)*100).toFixed(2) : null;
+  });
+
+  const exYoY = calcYoYArr(s1, allPeriods, periods);
+  const imYoY = calcYoYArr(s2, allPeriods, periods);
+
+  // KPI
+  const lastP = periods[periods.length-1];
+  const prevYr = (parseInt(lastP.slice(0,4))-1) + lastP.slice(4);
+  const lastEx = s1[lastP], lastIm = s2[lastP];
+  const lastExYoY = lastEx && s1[prevYr] ? ((lastEx/s1[prevYr])-1)*100 : null;
+  const lastImYoY = lastIm && s2[prevYr] ? ((lastIm/s2[prevYr])-1)*100 : null;
+
+  makeKPI('vt-kpi', [
+    { label: exKey || 'Izvoz', value: lastEx ? (lastEx/1e9).toFixed(2) + ' mlrd' : '—',
+      change: lastExYoY != null ? (lastExYoY>0?'+':'')+lastExYoY.toFixed(1)+'% YoY' : '',
+      changeClass: lastExYoY > 0 ? 'pos' : 'neg' },
+    { label: imKey || 'Uvoz', value: lastIm ? (lastIm/1e9).toFixed(2) + ' mlrd' : '—',
+      change: lastImYoY != null ? (lastImYoY>0?'+':'')+lastImYoY.toFixed(1)+'% YoY' : '',
+      changeClass: lastImYoY > 0 ? 'neg' : 'pos' },
+    { label: 'Deficit', value: (lastIm && lastEx) ? ((lastIm-lastEx)/1e9).toFixed(2) + ' mlrd' : '—',
+      change: periodToLabel(lastP), changeClass: 'neg' },
+    { label: 'Pokrivenost', value: (lastIm && lastEx) ? ((lastEx/lastIm)*100).toFixed(1) + '%' : '—',
+      change: 'Izvoz/Uvoz', changeClass: 'neu' },
+  ]);
+
+  // Glavni chart
+  if (vtChartMain) vtChartMain.destroy();
+  vtChartMain = new Chart(document.getElementById('chartVtMain'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: exKey || 'Izvoz', data: ex, borderColor: '#15803d', backgroundColor: 'rgba(21,128,61,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
+        { label: imKey || 'Uvoz', data: im, borderColor: '#b91c1c', backgroundColor: 'rgba(185,28,28,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { ...chartDefaults.plugins,
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } }
+      },
+      scales: { ...chartDefaults.scales,
+        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } },
+        y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
+      }
+    }
+  });
+
+  // Deficit chart
+  new Chart(document.getElementById('chartVtDeficit'), {
+    type: 'bar',
+    data: { labels: labels.slice(-36),
+      datasets: [{ label: 'Deficit', data: deficit.slice(-36),
+        backgroundColor: deficit.slice(-36).map(v => v > 0 ? 'rgba(185,28,28,0.7)' : 'rgba(21,128,61,0.7)'),
+        borderRadius: 3 }]
+    },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y,
+        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } } }
+    }
+  });
+
+  // Pokrivenost chart
+  new Chart(document.getElementById('chartVtPokrivenost'), {
+    type: 'line',
+    data: { labels: labels.slice(-60),
+      datasets: [{ label: 'Pokrivenost (%)', data: pokr.slice(-60),
+        borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)',
+        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }]
+    },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales,
+        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 10 } },
+        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } }
+      }
+    }
+  });
+
+  // YoY chart
+  new Chart(document.getElementById('chartVtYoY'), {
+    type: 'bar',
+    data: { labels: labels.slice(-36),
+      datasets: [
+        { label: exKey || 'Izvoz YoY', data: exYoY.slice(-36),
+          backgroundColor: 'rgba(21,128,61,0.7)', borderRadius: 3 },
+        { label: imKey || 'Uvoz YoY', data: imYoY.slice(-36),
+          backgroundColor: 'rgba(185,28,28,0.7)', borderRadius: 3 },
+      ]
+    },
+    options: { ...chartDefaults,
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y,
+        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
+    }
+  });
+}
 
 </script>
 </body>
