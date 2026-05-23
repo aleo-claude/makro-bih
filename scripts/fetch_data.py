@@ -2,6 +2,11 @@
 fetch_data.py — Makro BiH
 """
 import requests, json, os, re
+try:
+    import pdfplumber
+except ImportError:
+    os.system('pip install pdfplumber')
+    import pdfplumber
 from datetime import datetime
 from io import BytesIO
 from collections import defaultdict
@@ -264,6 +269,8 @@ if __name__ == '__main__':
     print()
     results['vanjska_trgovina'] = fetch_vanjska_trgovina()
     print()
+    results['vt_detalji'] = fetch_etr_detalji()
+    print()
     results['cpi'] = fetch_standard('cpi','CPI',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
          'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_02.xlsx'],[0,1],'cpi.json')
@@ -281,3 +288,115 @@ if __name__ == '__main__':
     for key, ok in results.items():
         print(f"  {'OK' if ok else 'X '} {key}")
     print(f"{'='*55}\n")
+
+
+# ─────────────────────────────────────────────────────────────
+# DODATAK: fetch_vanjska_trgovina_detalji
+# Parsira BHAS saopštenja (PDF) za zasebni izvoz i uvoz
+# ─────────────────────────────────────────────────────────────
+def fetch_etr_detalji():
+    """
+    Parsira BHAS PDF saopštenja za vanjsku trgovinu.
+    Svako saopštenje sadrži tablicu: Izvoz i Uvoz po mjesecima.
+    URL: https://bhas.gov.ba/data/Publikacije/Saopstenja/YYYY/ETR_01_YYYY_MM_1_BS.pdf
+    """
+    print("-> Vanjska trgovina detalji (BHAS PDF saopstenja)...")
+    
+    try:
+        import pdfplumber
+    except ImportError:
+        os.system("pip install pdfplumber")
+        import pdfplumber
+    
+    results_ex = {}  # izvoz po periodu
+    results_im = {}  # uvoz po periodu
+    
+    # Generiraj URL-ove za zadnjih 30 mjeseci
+    from datetime import date
+    today = date.today()
+    
+    for delta in range(0, 30):
+        month = today.month - delta
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        period = f"{year}-{month}"
+        
+        # Probaj BS i HR verziju
+        for lang in ['BS', 'HR']:
+            url = f"https://bhas.gov.ba/data/Publikacije/Saopstenja/{year}/ETR_01_{year}_{month:02d}_1_{lang}.pdf"
+            try:
+                r = requests.get(url, headers=HEADERS, timeout=20)
+                if r.status_code != 200 or len(r.content) < 5000:
+                    continue
+                
+                with pdfplumber.open(BytesIO(r.content)) as pdf:
+                    text = ""
+                    for page in pdf.pages[:2]:
+                        t = page.extract_text()
+                        if t:
+                            text += t + "\n"
+                
+                if not text:
+                    continue
+                
+                # Parsira tablicu UKUPNO/TOTAL
+                # Format: UKUPNO TOTAL [ex_prev] [ex_curr] [im_prev] [im_curr] ...
+                import re
+                
+                # Traži redak s UKUPNO i brojeve
+                for line in text.split('\n'):
+                    if 'UKUPNO' in line or ('TOTAL' in line and any(c.isdigit() for c in line)):
+                        # Izvuci sve grupe cifara (000 KM)
+                        nums = re.findall(r'(\d[\d\s]{3,12}\d)', line)
+                        cleaned = []
+                        for n in nums:
+                            try:
+                                val = int(n.replace(' ', ''))
+                                if 500000 < val < 5000000:  # razumne vrijednosti u 000 KM
+                                    cleaned.append(val * 1000)  # pretvori u KM
+                            except:
+                                pass
+                        
+                        if len(cleaned) >= 4:
+                            # Format: [ex_prev, ex_curr, im_prev, im_curr, ...]
+                            # ili [ex_prev, im_prev, ex_curr, im_curr, ...]
+                            # Odredit ćemo na osnovu veličine (uvoz je veći od izvoza)
+                            ex_curr = min(cleaned[1], cleaned[0])
+                            im_curr = max(cleaned[1], cleaned[0])
+                            if len(cleaned) >= 4:
+                                # Probaj 3. i 4. broj kao curr period
+                                if cleaned[2] < cleaned[3]:
+                                    ex_curr = cleaned[2]
+                                    im_curr = cleaned[3]
+                                else:
+                                    ex_curr = cleaned[3]
+                                    im_curr = cleaned[2]
+                            
+                            results_ex[period] = ex_curr
+                            results_im[period] = im_curr
+                            print(f"  OK {period} ({lang}): Ex={ex_curr/1e9:.3f}, Im={im_curr/1e9:.3f} mlrd")
+                            break
+                
+                if period in results_ex:
+                    break  # Ne trebamo drugu jezičnu verziju
+                    
+            except Exception as e:
+                pass
+    
+    if not results_ex:
+        print("  Nema podataka iz PDF saopstenja")
+        return False
+    
+    # Spremi u poseban JSON
+    save_json('vt_detalji.json', {
+        'source': 'BHAS PDF Saopstenja',
+        'name': 'Vanjska trgovina - Izvoz i Uvoz zasebno',
+        'updated': datetime.now().isoformat()[:10],
+        'note': 'Izvoz i uvoz u KM, parsiran iz PDF saopstenja',
+        'EX': results_ex,
+        'IM': results_im,
+    })
+    return True
