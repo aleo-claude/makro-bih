@@ -171,23 +171,25 @@ def fetch_vanjska_trgovina():
     for s in etr01.values(): all_periods.update(s.keys())
     periods = sort_periods(all_periods)[-84:]
 
-    # UK = ukupna razmjena iz ETR_01
-    uk = etr01.get('UK', {})
-    uk_compact = {p: uk[p] for p in periods if p in uk}
+    # ETR_01 UK = IZVOZ BiH po HS poglavljima (potvrđeno s BHAS PDF saopštenjima)
+    # ETR_02 UK = UVOZ BiH po zemljama porijekla (potvrđeno s BHAS PDF saopštenjima)
+    # ETR_03 = nedostupan (403)
+    
+    izvoz_series = etr01.get('UK', {})
+    izvoz = {p: izvoz_series[p] for p in periods if p in izvoz_series}
+    print(f"  Izvoz (ETR_01 UK): {len(izvoz)} perioda")
 
-    # EX = izvoz iz ETR_02 (UK serija)
-    ex = {}
+    uvoz = {}
     if etr02:
-        ex_series = etr02.get('UK', etr02.get(list(etr02.keys())[0], {}))
-        ex = {p: ex_series[p] for p in periods if p in ex_series}
-        print(f"  Izvoz: {len(ex)} perioda")
-
-    # IM = uvoz iz ETR_03 (UK serija)  
-    im = {}
-    if etr03:
-        im_series = etr03.get('UK', etr03.get(list(etr03.keys())[0], {}))
-        im = {p: im_series[p] for p in periods if p in im_series}
-        print(f"  Uvoz: {len(im)} perioda")
+        # ETR_02 ima UK seriju koja je ukupni uvoz
+        uvoz_series = etr02.get('UK', etr02.get(list(etr02.keys())[0], {}))
+        uvoz = {p: uvoz_series[p] for p in periods if p in uvoz_series}
+        print(f"  Uvoz (ETR_02 UK): {len(uvoz)} perioda")
+    
+    # Za kompatibilnost sa starim kodom
+    uk_compact = izvoz
+    ex = izvoz
+    im = uvoz
 
     # Godišnji zbroj
     annual_uk, annual_ex, annual_im = defaultdict(float), defaultdict(float), defaultdict(float)
@@ -205,8 +207,8 @@ def fetch_vanjska_trgovina():
 
     data = {
         'UK': uk_compact,
-        'EX': ex,  # izvoz
-        'IM': im,  # uvoz
+        'EX': izvoz,  # izvoz (ETR_01)
+        'IM': uvoz,   # uvoz (ETR_02)
         'annual': {
             yr: {
                 'uk': round(annual_uk.get(yr, 0)/1e9, 3),
@@ -224,9 +226,9 @@ def fetch_vanjska_trgovina():
         'name': 'Vanjska trgovina - izvoz, uvoz, razmjena BiH',
         'url': url01,
         'updated': datetime.now().isoformat()[:10],
-        'note': 'UK=ukupno, EX=izvoz, IM=uvoz, 01-99=HS poglavlja',
-        'has_ex': bool(ex),
-        'has_im': bool(im),
+        'note': 'EX=izvoz(ETR_01 UK), IM=uvoz(ETR_02 UK), 01-99=HS poglavlja',
+        'has_ex': bool(izvoz),
+        'has_im': bool(uvoz),
         'periods': periods,
         'data': data
     })
@@ -250,44 +252,6 @@ def update_meta(results):
                 'size_kb': os.path.getsize(path) // 1024
             }
     save_json('meta.json', meta)
-
-if __name__ == '__main__':
-    print(f"\n{'='*55}")
-    print(f"Makro BiH - Osvjezavanje podataka")
-    print(f"Datum: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
-    print(f"{'='*55}\n")
-
-    results = {}
-    results['maloprodaja'] = fetch_standard('maloprodaja','Indeksi prometa trgovine na malo',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/STS_01.xlsx'],[0,1],'maloprodaja.json')
-    print()
-    results['turizam'] = fetch_standard('turizam','Turizam',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/TUR_01.xlsx'],[0,1,2],'turizam.json')
-    print()
-    results['industrija'] = fetch_standard('industrija','Ind. proizvodnja',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/IND_01.xlsx'],[0,1],'industrija.json')
-    print()
-    results['vanjska_trgovina'] = fetch_vanjska_trgovina()
-    print()
-    results['vt_detalji'] = fetch_etr_detalji()
-    print()
-    results['cpi'] = fetch_standard('cpi','CPI',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_02.xlsx'],[0,1],'cpi.json')
-    print()
-    results['place'] = fetch_standard('place','Place',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],[0,1,2],'place.json')
-    print()
-
-    print("-> Meta...")
-    update_meta(results)
-    success = sum(results.values())
-    print(f"\n{'='*55}")
-    print(f"Zavrseno: {success}/{len(results)} uspjesno")
-    for key, ok in results.items():
-        print(f"  {'OK' if ok else 'X '} {key}")
-    print(f"{'='*55}\n")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -400,3 +364,40 @@ def fetch_etr_detalji():
         'IM': results_im,
     })
     return True
+if __name__ == '__main__':
+    print(f"\n{'='*55}")
+    print(f"Makro BiH - Osvjezavanje podataka")
+    print(f"Datum: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"{'='*55}\n")
+
+    results = {}
+    results['maloprodaja'] = fetch_standard('maloprodaja','Indeksi prometa trgovine na malo',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/STS_01.xlsx'],[0,1],'maloprodaja.json')
+    print()
+    results['turizam'] = fetch_standard('turizam','Turizam',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/TUR_01.xlsx'],[0,1,2],'turizam.json')
+    print()
+    results['industrija'] = fetch_standard('industrija','Ind. proizvodnja',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/IND_01.xlsx'],[0,1],'industrija.json')
+    print()
+    results['vanjska_trgovina'] = fetch_vanjska_trgovina()
+    print()
+    results['vt_detalji'] = fetch_etr_detalji()
+    print()
+    results['cpi'] = fetch_standard('cpi','CPI',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_02.xlsx'],[0,1],'cpi.json')
+    print()
+    results['place'] = fetch_standard('place','Place',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],[0,1,2],'place.json')
+    print()
+
+    print("-> Meta...")
+    update_meta(results)
+    success = sum(results.values())
+    print(f"\n{'='*55}")
+    print(f"Zavrseno: {success}/{len(results)} uspjesno")
+    for key, ok in results.items():
+        print(f"  {'OK' if ok else 'X '} {key}")
+    print(f"{'='*55}\n")
