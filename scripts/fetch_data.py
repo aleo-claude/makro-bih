@@ -388,9 +388,23 @@ if __name__ == '__main__':
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
          'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_02.xlsx'],[0,1],'cpi.json')
     print()
-    results['place'] = fetch_standard('place','Place',
+    results['place'] = fetch_standard('place','Place neto/bruto po sektorima',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],[0,1,2],'place.json')
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_03.xlsx'],
+        [0,1,2],'place.json')
+    print()
+    results['zaposlenost'] = fetch_standard('zaposlenost','Zaposleni po djelatnostima',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_04.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_02.xlsx'],
+        [0,1,2],'zaposlenost.json')
+    print()
+    results['nezaposlenost'] = fetch_standard('nezaposlenost','Registrovana nezaposlenost',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_05.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_02.xlsx'],
+        [0,1,2],'nezaposlenost.json')
     print()
 
     print("-> Meta...")
