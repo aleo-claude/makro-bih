@@ -364,6 +364,64 @@ def fetch_etr_detalji():
         'IM': results_im,
     })
     return True
+
+def fetch_place_neto_bruto():
+    """
+    Preuzima plaće s BHAS LAB_01:
+    - Sheet 0: NPL BPL = bruto plaće po sektorima  
+    - Sheet 1: NPL NPL = neto plaće po sektorima (ako postoji)
+    Probava i LAB_02/03 za neto.
+    """
+    print("-> Place neto i bruto po sektorima (BHAS LAB)...")
+    
+    urls = [
+        'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx',
+        'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
+        'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_03.xlsx',
+    ]
+    
+    all_sheets = {}
+    used_url = None
+    
+    for url in urls:
+        fname = url.split('/')[-1]
+        try:
+            print(f"  Probam: {fname}")
+            xls = fetch_excel(url)
+            wb = openpyxl.load_workbook(xls, data_only=True)
+            
+            print(f"    Sheetovi: {wb.sheetnames}")
+            
+            for idx, sname in enumerate(wb.sheetnames[:4]):
+                parsed = parse_sheet(wb[sname])
+                if parsed:
+                    compact = compact_series(parsed, n_periods=72)
+                    all_sheets[sname] = compact
+                    first = next(iter(compact.values()))
+                    print(f"    OK '{sname}': {len(compact)} serija, {len(first)} perioda")
+            
+            if all_sheets:
+                used_url = url
+                break
+        except Exception as e:
+            print(f"  X {fname}: {e}")
+    
+    if not all_sheets:
+        path = os.path.join(DATA_DIR, 'place.json')
+        if not os.path.exists(path):
+            save_json('place.json', {'source':'BHAS','error':'Nedostupno',
+                                     'updated':datetime.now().isoformat()[:10],'sheets':{}})
+        return False
+    
+    save_json('place.json', {
+        'source': 'BHAS',
+        'name': 'Place neto i bruto po sektorima',
+        'url': used_url,
+        'updated': datetime.now().isoformat()[:10],
+        'sheets': all_sheets
+    })
+    return True
+
 if __name__ == '__main__':
     print(f"\n{'='*55}")
     print(f"Makro BiH - Osvjezavanje podataka")
@@ -388,11 +446,9 @@ if __name__ == '__main__':
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
          'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_02.xlsx'],[0,1],'cpi.json')
     print()
-    results['place'] = fetch_standard('place','Place neto/bruto po sektorima',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_03.xlsx'],
-        [0,1,2],'place.json')
+    # LAB_01: sheet 0=bruto, sheet 1=neto (ako postoji)
+    # LAB_02/03: alternativni izvori neto plaća
+    results['place'] = fetch_place_neto_bruto()
     print()
     results['zaposlenost'] = fetch_standard('zaposlenost','Zaposleni po djelatnostima',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_04.xlsx',
