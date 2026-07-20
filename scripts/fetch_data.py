@@ -193,7 +193,7 @@ def fetch_vanjska_trgovina():
 
     # Godišnji zbroj
     annual_uk, annual_ex, annual_im = defaultdict(float), defaultdict(float), defaultdict(float)
-    for p, v in uk.items():
+    for p, v in izvoz.items():
         annual_uk[p.split('-')[0]] += v
     for p, v in ex.items():
         annual_ex[p.split('-')[0]] += v
@@ -471,4 +471,3 @@ if __name__ == '__main__':
     for key, ok in results.items():
         print(f"  {'OK' if ok else 'X '} {key}")
     print(f"{'='*55}\n")
-    
