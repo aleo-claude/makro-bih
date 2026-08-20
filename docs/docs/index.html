@@ -541,15 +541,10 @@ input[type="text"] { width: 200px; }
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Tržište rada</div>
-    <div class="nav-item disabled">
-      <span class="nav-icon">👷</span>
-      Zaposleni i nezaposleni
-      <span class="nav-badge soon">USKORO</span>
-    </div>
-    <div class="nav-item disabled">
+    <div class="nav-item" onclick="navTo('place', this)" data-page="place">
       <span class="nav-icon">💰</span>
-      Prosječne plaće
-      <span class="nav-badge soon">USKORO</span>
+      Plaće i zaposlenost
+      <span class="nav-badge">BHAS</span>
     </div>
   </div>
 
@@ -586,7 +581,7 @@ input[type="text"] { width: 200px; }
   </div>
 
   <div class="sidebar-footer">
-    Izvor: FIA FBiH · Ažurirano: II/2026
+    Izvor: Porezna uprava FBiH · Ažurirano: II/2026
   </div>
 </nav>
 
@@ -615,7 +610,7 @@ input[type="text"] { width: 200px; }
 
     <div class="page-header">
       <h2>Fiskalni promet FBiH</h2>
-      <p>Promet fiskalnih uređaja po općinama · Izvor: FIA FBiH · 79 općina · 2020–2026</p>
+      <p>Promet fiskalnih uređaja po općinama · Izvor: Porezna uprava FBiH · 79 općina · 2020–2026</p>
     </div>
 
     <!-- KPI strip -->
@@ -967,6 +962,77 @@ input[type="text"] { width: 200px; }
     <div id="vt-status" class="note">Učitavam podatke...</div>
   </div>
 
+
+  <!-- ══ SEKCIJA: PLAĆE I ZAPOSLENOST ══════════════════════════ -->
+  <div id="page-place" class="section-page">
+    <div class="page-header">
+      <h2>Neto plaće po sektorima BiH</h2>
+      <p>Prosječne neto plaće po sektorima (NACE klasifikacija) · Izvor: BHAS LAB_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="place-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header">
+          <h3>Plaće po sektorima — trend</h3>
+          <div class="chip-group" id="place-sector-chips"></div>
+        </div>
+        <p>Neto plaće u KM po sektoru (BHAS LAB_01)</p>
+        <div class="chart-wrap tall"><canvas id="chartPlaceMain"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Rang plaća po sektoru</h3></div>
+        <p>Prosjecna neto placa zadnji period</p>
+        <div class="chart-wrap tall"><canvas id="chartPlaceSektori"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY rast placa</h3></div>
+        <p>Godisnja stopa rasta prosjecnih placa</p>
+        <div class="chart-wrap"><canvas id="chartPlaceYoY"></canvas></div>
+      </div>
+    </div>
+    <div id="place-status" class="note">Ucitavam podatke...</div>
+  </div>
+
+
+  <!-- TURIZAM -->
+  <div id="page-turizam" class="section-page">
+    <div class="page-header">
+      <h2>Turizam i noćenja BiH</h2>
+      <p>Dolasci turista i noćenja · Izvor: BHAS TUR_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="tur-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header">
+          <h3>Noćenja — ukupno, domaći, strani</h3>
+          <div class="chip-group" id="tur-range-chips">
+            <div class="chip active" onclick="setTurRange(36, this)">3 god</div>
+            <div class="chip" onclick="setTurRange(60, this)">5 god</div>
+            <div class="chip" onclick="setTurRange(999, this)">Sve</div>
+          </div>
+        </div>
+        <p>Broj noćenja po mjesecu</p>
+        <div class="chart-wrap tall"><canvas id="chartTurMain"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Top tržišta — strani turisti</h3></div>
+        <p>Noćenja stranih turista po zemlji (zadnjih 12 mj.)</p>
+        <div class="chart-wrap tall"><canvas id="chartTurZemlje"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Sezonalnost</h3></div>
+        <p>Prosječna noćenja po mjesecu (zadnje 3 godine)</p>
+        <div class="chart-wrap"><canvas id="chartTurSezona"></canvas></div>
+      </div>
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>YoY rast noćenja</h3></div>
+        <p>Godišnja promjena ukupnih noćenja (%)</p>
+        <div class="chart-wrap"><canvas id="chartTurYoY"></canvas></div>
+      </div>
+    </div>
+    <div id="tur-status" class="note">Učitavam podatke...</div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -975,6 +1041,8 @@ const PAGE_TITLES = {
   fiskalni: 'Fiskalni promet',
   maloprodaja: 'Maloprodajni indeks',
   vanjska_trgovina: 'Vanjska trgovina',
+  place: 'Plaće i zaposlenost',
+  turizam: 'Turizam i noćenja',
 };
 
 function navTo(pageId, el) {
@@ -995,6 +1063,8 @@ function navTo(pageId, el) {
   else if (pageId === 'turizam') initTurizam();
   else if (pageId === 'industrija') initIndustrija();
   else if (pageId === 'vanjska_trgovina') initVanjskaTrgovina();
+  else if (pageId === 'place') initPlace();
+  else if (pageId === 'turizam') initTurizam();
 }
 
 // Sub-tab switching unutar fiskalni sekcije
@@ -2155,589 +2225,419 @@ async function initMaloprodaja() {
   }
 }
 
-// ── TURIZAM ────────────────────────────────────────────────────
+// TURIZAM
 let turInited = false;
+let turChartMain = null;
+let turRange = 36;
+const CNAMES = {"HR":"Hrvatska","RS":"Srbija","TR":"Turska","SI":"Slovenija","IT":"Italija","PL":"Poljska","SA":"S. Arabija","DE":"Njemačka","AE":"UAE","US":"SAD","AT":"Austrija","FR":"Francuska","ME":"Crna Gora","CN":"Kina"};
+const MTHS = ['','Sij','Velj','Ozu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
+
+function setTurRange(n, el) {
+  turRange = n;
+  document.querySelectorAll('#tur-range-chips .chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (window._turSheet) renderTurMain(window._turSheet, window._turPeriods);
+}
 
 async function initTurizam() {
   if (turInited) return;
   turInited = true;
-
-  const statusEl = document.getElementById('tur-status');
-
+  const st = document.getElementById('tur-status');
   try {
-    const r = await fetch(DATA_BASE + 'turizam.json?v=202604271208');
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'turizam.json');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
+    if (!data.sheets || !Object.keys(data.sheets).length) { st.textContent = 'Nema podataka.'; return; }
+    const sheet = Object.values(data.sheets)[0];
+    window._turSheet = sheet;
 
-    if (data.error || !data.sheets) {
-      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
-      return;
-    }
-
-    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
-    statusEl.style.borderLeftColor = 'var(--pos)';
-
-    const sheet = data.sheets['TUR 01'] || Object.values(data.sheets)[0];
-    if (!sheet) return;
-
-    const seriesKeys = Object.keys(sheet);
-
-    // Pronađi ključne serije
-    const arrivals = seriesKeys.find(k => k.toLowerCase().includes('arriv') || k.toLowerCase().includes('dolaz') || k === seriesKeys[0]);
-    const nights = seriesKeys.find(k => k.toLowerCase().includes('night') || k.toLowerCase().includes('noć') || k === seriesKeys[1]);
-    const domestic = seriesKeys.find(k => k.toLowerCase().includes('domest') || k.toLowerCase().includes('domać'));
-    const foreign = seriesKeys.find(k => k.toLowerCase().includes('foreign') || k.toLowerCase().includes('strani'));
-
-    const mainSeries = sheet[arrivals] || {};
-    const periods = getRecentPeriods(mainSeries, 72);
-    const labels = periods.map(periodToLabel);
+    const allP = new Set();
+    Object.keys(sheet).forEach(k => Object.keys(sheet[k]).forEach(p => allP.add(p)));
+    const periods = Array.from(allP).sort((a,b) => {
+      const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
+      return n(a).localeCompare(n(b));
+    });
+    window._turPeriods = periods;
 
     const lastP = periods[periods.length-1];
-    const lastArrivals = mainSeries[lastP];
-    const lastNights = nights ? sheet[nights]?.[lastP] : null;
-    const arrYoY = calcYoY(mainSeries, periods);
-    const lastYoY = arrYoY[arrYoY.length-1];
+    const prevP = (parseInt(lastP.split('-')[0])-1)+'-'+lastP.split('-')[1];
+    const ukNt = sheet['UK NT']||{}, nst = sheet['NST']||{}, ddt = sheet['DDT']||{}, ukDt = sheet['UK DT']||{};
+    const lastNoc = ukNt[lastP]||0, prevNoc = ukNt[prevP]||0;
+    const yoyNoc = prevNoc ? ((lastNoc/prevNoc)-1)*100 : null;
+    const lastYr = parseInt(lastP.split('-')[0]);
+    const fullYr = (parseInt(lastP.split('-')[1]) >= 11 ? lastYr : lastYr-1).toString();
+    const annNoc = Object.entries(ukNt).filter(([p]) => p.startsWith(fullYr)).reduce((s,[,v]) => s+v, 0);
+    const stranjiPct = lastNoc ? ((nst[lastP]||0)/lastNoc*100) : null;
 
     makeKPI('tur-kpi', [
-      { label: 'Dolasci zadnji', value: lastArrivals ? fmtNum(lastArrivals/1000, 0) + 'K' : '—',
-        change: periodToLabel(lastP), changeClass: 'neu' },
-      { label: 'Noćenja zadnji', value: lastNights ? fmtNum(lastNights/1000, 0) + 'K' : '—', changeClass: 'neu' },
-      { label: 'YoY dolasci', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
-        changeClass: lastYoY > 0 ? 'pos' : 'neg' },
-      { label: 'Perioda podataka', value: periods.length, change: periods[0] + ' — ' + lastP, changeClass: 'neu' },
+      { label: 'Nocenja zadnji mj.', value: (lastNoc/1000).toFixed(0)+'K', change: periodToLabel(lastP), changeClass: 'neu' },
+      { label: 'YoY nocenja', value: yoyNoc != null ? (yoyNoc>0?'+':'')+yoyNoc.toFixed(1)+'%' : '-', changeClass: yoyNoc > 0 ? 'pos' : 'neg' },
+      { label: fullYr+' ukupno', value: (annNoc/1000).toFixed(0)+'K nocenja', changeClass: 'neu' },
+      { label: 'Strani turisti', value: stranjiPct ? stranjiPct.toFixed(0)+'%' : '-', change: 'udio u nocenjima', changeClass: 'neu' },
     ]);
 
-    // Glavni chart
-    const datasets = [
-      { label: arrivals || 'Dolasci', data: periods.map(p => mainSeries[p]), borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }
-    ];
-    if (nights && sheet[nights]) {
-      datasets.push({ label: nights, data: periods.map(p => sheet[nights][p]), borderColor: '#0891b2', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 1 });
-    }
+    st.textContent = 'OK ' + data.updated + ' - BHAS TUR_01';
+    st.style.borderLeftColor = 'var(--pos)';
 
-    new Chart(document.getElementById('chartTur'), {
-      type: 'line',
-      data: { labels, datasets },
-      options: {
-        ...chartDefaults,
-        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } } }
+    renderTurMain(sheet, periods);
+
+    // Top zemlja
+    const countries = ['HR','RS','TR','SI','IT','PL','SA','DE','AE','US','AT','FR','ME','CN'];
+    const last12 = periods.slice(-12);
+    const cData = countries.filter(c => sheet[c]).map(c => ({ name: CNAMES[c]||c, val: last12.reduce((s,p) => s+(sheet[c][p]||0), 0) })).sort((a,b) => b.val-a.val).slice(0,10);
+    new Chart(document.getElementById('chartTurZemlje'), {
+      type: 'bar',
+      data: { labels: cData.map(c => c.name), datasets: [{ label: 'Nocenja (12mj)', data: cData.map(c => c.val), backgroundColor: cData.map((_,i) => 'hsla('+(i*36%360)+',65%,45%,0.8)'), borderRadius: 4 }] },
+      options: { ...chartDefaults, indexAxis: 'y',
+        plugins: { ...chartDefaults.plugins, legend: { display: false }, tooltip: { callbacks: { label: ctx => ' '+(ctx.parsed.x/1000).toFixed(0)+'K nocenja' } } },
+        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, min: 0, ticks: { ...chartDefaults.scales.x.ticks, callback: v => (v/1000).toFixed(0)+'K' } }, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, color: '#374151', font: { size: 11 } } } }
       }
     });
 
-    // Pie — domaći vs strani
-    if (domestic && foreign) {
-      new Chart(document.getElementById('chartTurPie'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Domaći', 'Strani'],
-          datasets: [{ data: [sheet[domestic]?.[lastP] || 0, sheet[foreign]?.[lastP] || 0], backgroundColor: ['#1a56db', '#0891b2'] }]
-        },
-        options: { plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 12 } } } } }
-      });
-    }
-
-    // Sezonalnost — prosječna noćenja po mjesecu
-    const monthData = Array(12).fill(0).map(() => ({ sum: 0, count: 0 }));
-    if (nights) {
-      Object.entries(sheet[nights] || {}).forEach(([p, v]) => {
-        if (/^\d{4}-\d{2}$/.test(p) && v) {
-          const m = parseInt(p.slice(5)) - 1;
-          monthData[m].sum += v;
-          monthData[m].count++;
-        }
-      });
-    }
-    const monthAvg = monthData.map(d => d.count ? +(d.sum/d.count).toFixed(0) : null);
-
-    new Chart(document.getElementById('chartTurSeason'), {
+    // Sezonalnost
+    const mData = Array(12).fill(0).map(() => ({ s: 0, n: 0 }));
+    Object.entries(ukNt).forEach(([p, v]) => {
+      const [yr, mo] = p.split('-');
+      if (parseInt(yr) >= lastYr-2 && parseInt(yr) <= lastYr) { mData[parseInt(mo)-1].s += v; mData[parseInt(mo)-1].n++; }
+    });
+    const mAvg = mData.map(d => d.n ? Math.round(d.s/d.n) : null);
+    new Chart(document.getElementById('chartTurSezona'), {
       type: 'bar',
-      data: {
-        labels: MONTH_NAMES.slice(1),
-        datasets: [{ label: 'Prosj. noćenja', data: monthAvg, backgroundColor: '#0891b2', borderRadius: 4 }]
-      },
-      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+      data: { labels: MTHS.slice(1), datasets: [{ label: 'Prosj. nocenja', data: mAvg, backgroundColor: mAvg.map(v => v > 350000 ? 'rgba(21,128,61,0.8)' : v > 200000 ? 'rgba(26,86,219,0.7)' : 'rgba(107,114,128,0.5)'), borderRadius: 4 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false }, tooltip: { callbacks: { label: ctx => ' '+(ctx.parsed.y/1000).toFixed(0)+'K nocenja' } } }, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => (v/1000).toFixed(0)+'K' } } } }
     });
 
-  } catch(e) {
-    statusEl.textContent = '⚠️ Greška: ' + e.message;
-    console.error('Turizam error:', e);
-  }
+    // YoY
+    const yoyArr = periods.map(p => { const [yr,mo] = p.split('-'); const prev = (parseInt(yr)-1)+'-'+mo; const c = ukNt[p], pv = ukNt[prev]; return (c&&pv) ? +((c/pv-1)*100).toFixed(2) : null; });
+    new Chart(document.getElementById('chartTurYoY'), {
+      type: 'bar',
+      data: { labels: periods.slice(-36).map(p => periodToLabel(p)), datasets: [{ label: 'YoY %', data: yoyArr.slice(-36), backgroundColor: yoyArr.slice(-36).map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)'), borderRadius: 3 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } }, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } } }
+    });
+
+  } catch(e) { document.getElementById('tur-status').textContent = 'Greska: '+e.message; console.error(e); }
 }
 
-// ── INDUSTRIJA ─────────────────────────────────────────────────
+function renderTurMain(sheet, periods) {
+  const show = turRange >= 999 ? periods : periods.slice(-turRange);
+  const labels = show.map(p => periodToLabel(p));
+  const ukNt = sheet['UK NT']||{}, nst = sheet['NST']||{}, ddt = sheet['DDT']||{};
+  if (turChartMain) turChartMain.destroy();
+  turChartMain = new Chart(document.getElementById('chartTurMain'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Ukupna nocenja', data: show.map(p => ukNt[p]||null), borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.06)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 1 },
+      { label: 'Strani turisti', data: show.map(p => nst[p]||null), borderColor: '#e02424', backgroundColor: 'transparent', tension: 0.3, borderWidth: 1.5, pointRadius: 0 },
+      { label: 'Domaci turisti', data: show.map(p => ddt[p]||null), borderColor: '#15803d', backgroundColor: 'transparent', tension: 0.3, borderWidth: 1.5, pointRadius: 0 },
+    ]},
+    options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+(ctx.parsed.y/1000).toFixed(0)+'K' } } },
+      scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } }, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => (v/1000).toFixed(0)+'K' } } }
+    }
+  });
+}
+
+
+
+// ═══════════════════════ INDUSTRIJA ═══════════════════════
 let indInited = false;
 
 async function initIndustrija() {
   if (indInited) return;
   indInited = true;
-
-  const statusEl = document.getElementById('ind-status');
-
+  const st = document.getElementById('ind-status');
   try {
-    const r = await fetch(DATA_BASE + 'industrija.json?v=202604271208');
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'industrija.json');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
+    if (!data.sheets || !Object.keys(data.sheets).length) { st.textContent = 'Nema podataka.'; return; }
 
-    if (data.error || !data.sheets) {
-      statusEl.textContent = '⚠️ Podaci nisu dostupni: ' + (data.error || 'Prazno');
-      return;
-    }
-
-    statusEl.textContent = `✓ Podaci učitani · ${data.updated} · Izvor: ${data.source}`;
-    statusEl.style.borderLeftColor = 'var(--pos)';
-
-    const sheet = data.sheets['BIH IPI'] || Object.values(data.sheets)[0];
-    if (!sheet) return;
-
-    const seriesKeys = Object.keys(sheet);
-    const totalKey = seriesKeys.find(k => k === 'C' || k.toLowerCase().includes('total') || k === seriesKeys[0]);
+    const sheet = Object.values(data.sheets)[0];
+    const keys = Object.keys(sheet);
+    const totalKey = keys.find(k => k === 'C' || k.toLowerCase().includes('total') || k.toLowerCase().includes('ukupno')) || keys[0];
     const totalSeries = sheet[totalKey];
 
-    const periods = getRecentPeriods(totalSeries, 60);
+    const periods = Object.keys(totalSeries).sort((a,b) => {
+      const n = s => { const [y,m] = s.split('-'); return y+'-'+(m||'').padStart(2,'0'); };
+      return n(a).localeCompare(n(b));
+    });
+    const labels = periods.map(p => periodToLabel(p));
     const values = periods.map(p => totalSeries[p]);
-    const yoys = calcYoY(totalSeries, periods);
-    const labels = periods.map(periodToLabel);
+    const yoys = periods.map(p => {
+      const [yr,mo] = p.split('-');
+      const prev = (parseInt(yr)-1)+'-'+mo;
+      const c = totalSeries[p], pv = totalSeries[prev];
+      return (c&&pv) ? +((c/pv-1)*100).toFixed(2) : null;
+    });
 
+    const lastP = periods[periods.length-1];
     const lastVal = values[values.length-1];
     const lastYoY = yoys[yoys.length-1];
-    const avgYoY12 = yoys.filter(v => v != null).slice(-12).reduce((a,b) => a+b, 0) / 12;
+    const avg12 = yoys.filter(v=>v!=null).slice(-12).reduce((a,b)=>a+b,0)/12;
 
     makeKPI('ind-kpi', [
-      { label: 'Zadnji indeks', value: fmtNum(lastVal), change: periodToLabel(periods[periods.length-1]), changeClass: 'neu' },
-      { label: 'YoY zadnji', value: lastYoY != null ? (lastYoY > 0 ? '+' : '') + fmtNum(lastYoY) + '%' : '—',
-        changeClass: lastYoY > 0 ? 'pos' : 'neg' },
-      { label: 'Prosjek YoY 12M', value: (avgYoY12 > 0 ? '+' : '') + fmtNum(avgYoY12) + '%', changeClass: avgYoY12 > 0 ? 'pos' : 'neg' },
-      { label: 'Serija podataka', value: seriesKeys.length + ' sektora', changeClass: 'neu' },
+      { label: 'Zadnji indeks', value: lastVal ? lastVal.toFixed(1) : '-', change: periodToLabel(lastP), changeClass: 'neu' },
+      { label: 'YoY zadnji', value: lastYoY != null ? (lastYoY>0?'+':'')+lastYoY.toFixed(1)+'%' : '-', changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Prosjek YoY 12M', value: (avg12>0?'+':'')+avg12.toFixed(1)+'%', changeClass: avg12 > 0 ? 'pos' : 'neg' },
+      { label: 'Sektora', value: keys.length, change: 'po NACE klasifikaciji', changeClass: 'neu' },
     ]);
 
-    // Glavni chart
-    const colors = ['#1a56db','#0891b2','#15803d','#b45309','#7c3aed'];
-    const topSeries = seriesKeys.slice(0, 5);
+    st.innerHTML = 'Izvor: <a href="https://bhas.gov.ba/Calendar/Category/12" target="_blank">BHAS IND_01</a> · Azurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
 
+    const COLORS = ['#1a56db','#0891b2','#15803d','#b45309','#7c3aed'];
     new Chart(document.getElementById('chartInd'), {
       type: 'line',
-      data: {
-        labels,
-        datasets: topSeries.map((k, i) => ({
-          label: k,
-          data: periods.map(p => sheet[k]?.[p] ?? null),
-          borderColor: colors[i],
-          backgroundColor: 'transparent',
-          tension: 0.3,
-          borderWidth: i === 0 ? 2.5 : 1.5,
-          pointRadius: 0,
-        }))
-      },
-      options: {
-        ...chartDefaults,
+      data: { labels, datasets: keys.slice(0,5).map((k,i) => ({
+        label: k, data: periods.map(p => sheet[k]?.[p]||null),
+        borderColor: COLORS[i], backgroundColor: 'transparent',
+        tension: 0.3, borderWidth: i===0?2.5:1.5, pointRadius: 0,
+      }))},
+      options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
         scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } } }
       }
     });
 
-    // YoY
     new Chart(document.getElementById('chartIndYoY'), {
       type: 'bar',
-      data: {
-        labels: labels.slice(-36),
-        datasets: [{ label: 'YoY %', data: yoys.slice(-36), backgroundColor: yoys.slice(-36).map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(185,28,28,0.7)'), borderRadius: 3 }]
-      },
+      data: { labels: labels.slice(-36), datasets: [{ label: 'YoY %', data: yoys.slice(-36),
+        backgroundColor: yoys.slice(-36).map(v => v>=0?'rgba(21,128,61,0.7)':'rgba(185,28,28,0.7)'), borderRadius: 3 }] },
       options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } } }
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
       }
     });
 
-    // Pie — zadnji period po sektoru
-    const lastP = periods[periods.length-1];
-    const top5 = seriesKeys.filter(k => k !== totalKey).slice(0, 5);
+    const lastPd = periods[periods.length-1];
+    const top5 = keys.filter(k=>k!==totalKey).slice(0,5);
     new Chart(document.getElementById('chartIndPie'), {
       type: 'doughnut',
-      data: {
-        labels: top5.map(k => k.length > 25 ? k.slice(0,23)+'…' : k),
-        datasets: [{ data: top5.map(k => Math.abs(sheet[k]?.[lastP] || 0)), backgroundColor: colors }]
-      },
+      data: { labels: top5.map(k=>k.length>20?k.slice(0,18)+'..':k), datasets: [{ data: top5.map(k=>Math.abs(sheet[k]?.[lastPd]||0)), backgroundColor: COLORS }] },
       options: { plugins: { legend: { position: 'right', labels: { color: '#374151', font: { size: 11 } } } } }
     });
 
-  } catch(e) {
-    statusEl.textContent = '⚠️ Greška: ' + e.message;
-    console.error('Industrija error:', e);
-  }
+  } catch(e) { document.getElementById('ind-status').textContent = 'Greska: '+e.message; console.error(e); }
 }
-
-// ── BHAS init pozivi - dodano direktno na kraj navTo ──────────
-
-
 
 // ═══════════════════════ VANJSKA TRGOVINA ═══════════════════════
 let vtInited = false;
 let vtChartMain = null;
 let vtRange = 60;
-let vtAllData = null;
 
 function setVtRange(n, el) {
   vtRange = n;
   document.querySelectorAll('#vt-range-chips .chip').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
-  if (vtAllData) renderVtCharts(vtAllData);
+  if (window._vtData) renderVtCharts(window._vtData);
 }
 
 async function initVanjskaTrgovina() {
   if (vtInited) return;
   vtInited = true;
-  const statusEl = document.getElementById('vt-status');
-
-  const HS_NAMES = {"27":"Mineralna goriva","94":"Namještaj","84":"Strojevi/meh.","44":"Drvo i drvni prod.","76":"Aluminij","85":"El. uređaji","73":"Željezni prod.","64":"Obuća","72":"Čelik/željezo","28":"Kem. proizvodi","39":"Plastika","87":"Vozila","62":"Odjeća tkana","48":"Papir","61":"Odjeća pletena"};
-
+  const st = document.getElementById('vt-status');
   try {
-    statusEl.textContent = 'Učitavam podatke...';
-    
-    // Učitaj i detalje (izvoz/uvoz zasebno iz PDF saopštenja)
-    let detalji = null;
-    try {
-      const dr = await fetch(DATA_BASE + 'vt_detalji.json');
-      if (dr.ok) detalji = await dr.json();
-    } catch(e) {}
-    
+    st.textContent = 'Ucitavam...';
     const resp = await fetch(DATA_BASE + 'vanjska_trgovina.json');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const json = await resp.json();
-
     const d = json.data;
-    if (!d) throw new Error('Format podataka nije prepoznat');
+    if (!d || !d.UK) throw new Error('Format nije prepoznat');
 
-    // UK = izvoz (ETR_01), EX = uvoz (ETR_02) - potvrđeno s BHAS PDF saopštenjima
-    // Koristimo direktno bez obzira na has_ex/has_im zastavice
-    const hasDetalji = false;
-    const hasEx = d.UK && Object.keys(d.UK).length > 0;
-    const hasIm = d.EX && Object.keys(d.EX).length > 0;
-    
-    // Prenamjenimo: UK = izvoz, napravimo "kumulativni->mjesečni" iz EX
-    const exCumul = d.EX || {};
-    // Izračunaj mjesečni izvoz iz kumulativa (jan=sam jan, feb=feb-jan, itd.)
-    const exMonthly = {};
-    const cumPeriods = Object.keys(exCumul).sort((a,b) => {
-      const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
-      return n(a).localeCompare(n(b));
-    });
-    cumPeriods.forEach((p, i) => {
-      const [yr, mo] = p.split('-');
-      if (mo === '1' || mo === '01') {
-        exMonthly[p] = exCumul[p]; // januar = kumulativ = sam januar
-      } else {
-        // Pronađi prethodni period
-        const prevMo = parseInt(mo) - 1;
-        const prevP = yr + '-' + prevMo;
-        if (exCumul[prevP] != null) {
-          exMonthly[p] = exCumul[p] - exCumul[prevP];
-        }
-      }
-    });
+    window._vtData = { json, d };
 
-    statusEl.textContent = `✓ ${json.updated} · Izvoz: ETR_01 · Uvoz: ETR_02 · Deficit i pokrivenost dostupni`;
-    statusEl.style.borderLeftColor = 'var(--pos)';
+    st.innerHTML = 'Izvor: <a href="https://bhas.gov.ba/Calendar/Category/14" target="_blank">BHAS ETR_01/02</a> · UK=Izvoz · EX=Uvoz · Azurirano: ' + json.updated;
+    st.style.borderLeftColor = 'var(--pos)';
 
-    // Sortirani periodi
-    const periods = json.periods || Object.keys(d.UK||{}).sort((a,b) => {
+    renderVtCharts({ json, d });
+  } catch(e) { document.getElementById('vt-status').textContent = 'Greska: '+e.message; console.error(e); }
+}
+
+function renderVtCharts({ json, d }) {
+  const periods = (json.periods || Object.keys(d.UK)).sort((a,b) => {
+    const n = s => { const [y,m] = s.split('-'); return y+'-'+(m||'').padStart(2,'0'); };
+    return n(a).localeCompare(n(b));
+  });
+
+  // UK = izvoz, EX = uvoz
+  const ex = d.UK || {};
+  const im = d.EX || {};
+  const hasIm = Object.keys(im).length > 0;
+
+  const show = vtRange >= 999 ? periods : periods.slice(-vtRange);
+  const labels = show.map(p => periodToLabel(p));
+  const exVals = show.map(p => ex[p] ? +(ex[p]/1e9).toFixed(3) : null);
+  const imVals = show.map(p => im[p] ? +(im[p]/1e9).toFixed(3) : null);
+  const deficit = show.map((p,i) => (imVals[i]!=null&&exVals[i]!=null) ? +((imVals[i]-exVals[i]).toFixed(3)) : null);
+  const pokr = show.map((p,i) => (imVals[i]&&exVals[i]) ? +((exVals[i]/imVals[i]*100).toFixed(1)) : null);
+
+  const lastP = periods[periods.length-1];
+  const lastEx = ex[lastP], lastIm = im[lastP];
+  const prevP = (parseInt(lastP.split('-')[0])-1)+'-'+lastP.split('-')[1];
+  const lastExYoY = (lastEx&&ex[prevP]) ? ((lastEx/ex[prevP])-1)*100 : null;
+
+  makeKPI('vt-kpi', [
+    { label: 'Izvoz zadnji', value: lastEx?(lastEx/1e9).toFixed(2)+' mlrd':'-', change: periodToLabel(lastP), changeClass: 'neu' },
+    { label: hasIm?'Uvoz zadnji':'YoY izvoz', value: hasIm?(lastIm?(lastIm/1e9).toFixed(2)+' mlrd':'-'):(lastExYoY!=null?(lastExYoY>0?'+':'')+lastExYoY.toFixed(1)+'%':'-'), changeClass: hasIm?'neg':(lastExYoY>0?'pos':'neg') },
+    { label: 'Deficit', value: (lastIm&&lastEx)?((lastIm-lastEx)/1e9).toFixed(2)+' mlrd':'-', changeClass: 'neg' },
+    { label: 'Pokrivenost', value: (lastIm&&lastEx)?((lastEx/lastIm)*100).toFixed(1)+'%':'-', change: 'Izvoz/Uvoz x 100', changeClass: 'neu' },
+  ]);
+
+  if (vtChartMain) vtChartMain.destroy();
+  const datasets = [{ label: 'Izvoz', data: exVals, borderColor: '#15803d', backgroundColor: 'rgba(21,128,61,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }];
+  if (hasIm) datasets.push({ label: 'Uvoz', data: imVals, borderColor: '#b91c1c', backgroundColor: 'rgba(185,28,28,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 });
+
+  vtChartMain = new Chart(document.getElementById('chartVtMain'), {
+    type: 'line', data: { labels, datasets },
+    options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(3)+' mlrd BAM' } } },
+      scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } }, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } } }
+    }
+  });
+
+  // Godisnji
+  const annual = d.annual || {};
+  const annYears = Object.keys(annual).sort().slice(-9);
+  new Chart(document.getElementById('chartVtDeficit'), {
+    type: 'bar',
+    data: { labels: annYears, datasets: [{ label: 'Godisnja razmjena', data: annYears.map(y => annual[y]?.uk||null), backgroundColor: 'rgba(26,86,219,0.8)', borderRadius: 4 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.y+' mlrd BAM' } } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+' mlrd' } } }
+    }
+  });
+
+  // YoY
+  const exYoY = periods.map(p => { const [yr,mo] = p.split('-'); const prev=(parseInt(yr)-1)+'-'+mo; return (ex[p]&&ex[prev])?+((ex[p]/ex[prev]-1)*100).toFixed(2):null; });
+  new Chart(document.getElementById('chartVtPokrivenost'), {
+    type: 'bar', data: { labels: labels.slice(-36), datasets: [{ label: 'YoY %', data: exYoY.slice(-36), backgroundColor: exYoY.slice(-36).map(v=>v>=0?'rgba(21,128,61,0.7)':'rgba(185,28,28,0.7)'), borderRadius: 3 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } }, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } } }
+  });
+
+  // Top HS
+  const hsKeys = Object.keys(d).filter(k => !['UK','EX','IM','annual'].includes(k));
+  const HS_NAMES = {"27":"Mineralna goriva","94":"Namjestaj","84":"Strojevi","44":"Drvo","76":"Aluminij","85":"El. uredaji","73":"Zeljezo/celik","64":"Obuca","72":"Celik","28":"Kem. proizvodi"};
+  const last12p = periods.slice(-12);
+  const hsTot = hsKeys.map(k => ({ key: k, name: HS_NAMES[k]||'HS '+k, val: last12p.reduce((s,p)=>s+(d[k][p]||0),0) })).sort((a,b)=>b.val-a.val).slice(0,10);
+  new Chart(document.getElementById('chartVtYoY'), {
+    type: 'bar', data: { labels: hsTot.map(h=>h.name), datasets: [{ label: '12mj razmjena', data: hsTot.map(h=>+(h.val/1e9).toFixed(2)), backgroundColor: 'rgba(26,86,219,0.75)', borderRadius: 4 }] },
+    options: { ...chartDefaults, indexAxis: 'y', plugins: { ...chartDefaults.plugins, legend: { display: false }, tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.x.toFixed(2)+' mlrd BAM' } } },
+      scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, min: 0, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v+' mlrd' } }, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, color: '#374151' } } }
+    }
+  });
+}
+
+// ═══════════════════════ PLACE ═══════════════════════
+let placeInited = false;
+let placeChartInst = null;
+let activeSectors = [];
+const NACE = {"K":"Financije","K64":"Fin. usluge","K65":"Osiguranje","K66":"Pom. fin.","J":"IT/Telekom","J61":"Telekomunik.","J62":"IT usluge","D":"Energetika","D35":"El. energija","M72":"Istrazivanje","O":"Javna uprava","O84":"Jav. uprava","Q86":"Zdravlje","N78":"Zaposljavanje","H52":"Skladistenje","M73":"Oglasavanje","M70":"Upravljanje","Q":"Zdravstvo","S94":"Organizacije","C21":"Farmaceutika"};
+function getN(c) { return NACE[c]||c; }
+
+async function initPlace() {
+  if (placeInited) return;
+  placeInited = true;
+  const st = document.getElementById('place-status');
+  try {
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'place.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (!data.sheets || !Object.keys(data.sheets).length) { st.textContent = 'Nema podataka.'; return; }
+
+    const sheet = Object.values(data.sheets)[0];
+    const keys = Object.keys(sheet);
+
+    const allP = new Set();
+    keys.forEach(k => Object.keys(sheet[k]).forEach(p => allP.add(p)));
+    const periods = Array.from(allP).sort((a,b) => {
       const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
       return n(a).localeCompare(n(b));
     });
     const labels = periods.map(p => periodToLabel(p));
-
-    const uk = {}; // ukupno - računamo iz ex+im
-    // UK = izvoz (ETR_01), EX = uvoz (ETR_02)
-    const ex = d.UK || {};  // izvoz
-    const im = d.EX || {};  // uvoz (ETR_02)
-
-    const ukVals = periods.map(p => uk[p] ? +(uk[p]/1e9).toFixed(3) : null);
-    const exVals = periods.map(p => ex[p] ? +(ex[p]/1e9).toFixed(3) : null);
-    const imVals = periods.map(p => im[p] ? +(im[p]/1e9).toFixed(3) : null);
-
-    // Deficit i pokrivenost
-    const deficit = periods.map((p,i) => (imVals[i]!=null && exVals[i]!=null) ? +((imVals[i]-exVals[i]).toFixed(3)) : null);
-    const pokr = periods.map((p,i) => (imVals[i] && exVals[i]) ? +((exVals[i]/imVals[i]*100).toFixed(1)) : null);
-
-    // YoY za UK
-    const ukYoY = periods.map(p => {
-      const [yr,mo] = p.split('-');
-      const prev = (parseInt(yr)-1)+'-'+mo;
-      const curr = uk[p], prevV = uk[prev];
-      return (curr&&prevV) ? +((curr/prevV-1)*100).toFixed(2) : null;
-    });
-
-    // Godišnji
-    const annual = d.annual || {};
-    const annYears = Object.keys(annual).sort().slice(-9);
-
-    // KPI
     const lastP = periods[periods.length-1];
-    const lastEx = ex[lastP], lastIm = im[lastP], lastUk = uk[lastP];
-    const lastDeficit = (lastIm && lastEx) ? lastIm - lastEx : null;
-    const lastPokr = (lastIm && lastEx) ? (lastEx/lastIm*100) : null;
-    const lastYoY = ukYoY[ukYoY.length-1];
 
-    makeKPI('vt-kpi', [
-      { label: hasEx ? 'Izvoz' : 'Ukupna razmjena',
-        value: (hasEx ? lastEx : lastUk) ? ((hasEx?lastEx:lastUk)/1e9).toFixed(2)+' mlrd' : '—',
-        change: periodToLabel(lastP), changeClass: 'neu' },
-      { label: hasIm ? 'Uvoz' : 'YoY zadnji',
-        value: hasIm ? (lastIm?(lastIm/1e9).toFixed(2)+' mlrd':'—') : (lastYoY!=null?(lastYoY>0?'+':'')+lastYoY.toFixed(1)+'%':'—'),
-        changeClass: hasIm ? 'neg' : (lastYoY>0?'pos':'neg') },
-      { label: 'Deficit (uvoz-izvoz)',
-        value: lastDeficit != null ? (lastDeficit/1e9).toFixed(2)+' mlrd' : (lastYoY!=null?(lastYoY>0?'+':'')+lastYoY.toFixed(1)+'%':'—'),
-        changeClass: 'neg' },
-      { label: 'Pokrivenost uvoza',
-        value: lastPokr != null ? lastPokr.toFixed(1)+'%' : '—',
-        change: 'Izvoz / Uvoz × 100', changeClass: lastPokr > 70 ? 'pos' : 'neg' },
+    const sectors = keys.map(k => ({ key: k, name: getN(k), last: sheet[k][lastP]||0 })).sort((a,b) => b.last-a.last);
+    const vals = sectors.map(s=>s.last).filter(v=>v>0);
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    const maxS = sectors[0], minS = sectors[sectors.length-1];
+    const prevP = (parseInt(lastP.split('-')[0])-1)+'-'+lastP.split('-')[1];
+    const prevVals = keys.map(k=>sheet[k][prevP]||0).filter(v=>v>0);
+    const prevAvg = prevVals.length ? prevVals.reduce((a,b)=>a+b,0)/prevVals.length : 0;
+    const yoy = prevAvg ? ((avg/prevAvg)-1)*100 : null;
+
+    makeKPI('place-kpi', [
+      { label: 'Prosjek neto placa', value: avg.toFixed(0)+' KM', change: periodToLabel(lastP), changeClass: 'neu' },
+      { label: 'Najvisa', value: maxS.last.toFixed(0)+' KM', change: maxS.name, changeClass: 'pos' },
+      { label: 'Najniza', value: minS.last.toFixed(0)+' KM', change: minS.name, changeClass: 'neg' },
+      { label: 'YoY rast', value: yoy!=null?(yoy>0?'+':'')+yoy.toFixed(1)+'%':'-', changeClass: yoy>0?'pos':'neg' },
     ]);
 
-    // GLAVNI CHART
-    const showPeriods = vtRange >= 999 ? periods : periods.slice(-vtRange);
-    const showLabels = showPeriods.map(p => periodToLabel(p));
+    st.innerHTML = 'Izvor: <a href="https://bhas.gov.ba/Calendar/Category/7" target="_blank">BHAS LAB_01</a> · Neto place po sektorima · Azurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
 
-    if (vtChartMain) vtChartMain.destroy();
-
-    if (hasEx && hasIm) {
-      // Prikaži izvoz i uvoz zasebno
-      vtChartMain = new Chart(document.getElementById('chartVtMain'), {
-        type: 'line',
-        data: { labels: showLabels, datasets: [
-          { label: 'Izvoz', data: showPeriods.map(p=>ex[p]?+(ex[p]/1e9).toFixed(3):null),
-            borderColor: '#15803d', backgroundColor: 'rgba(21,128,61,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
-          { label: 'Uvoz', data: showPeriods.map(p=>im[p]?+(im[p]/1e9).toFixed(3):null),
-            borderColor: '#b91c1c', backgroundColor: 'rgba(185,28,28,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
-        ]},
-        options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
-          plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } } },
-          scales: { ...chartDefaults.scales,
-            x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } },
-            y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
-          }
+    const top6 = sectors.slice(0,6);
+    const COLORS = ['#1a56db','#e02424','#15803d','#7c3aed','#c2410c','#0891b2'];
+    activeSectors = top6.slice(0,3).map(s=>s.key);
+    const chipsEl = document.getElementById('place-sector-chips');
+    chipsEl.innerHTML = '';
+    top6.forEach((s,i) => {
+      const chip = document.createElement('div');
+      const isActive = activeSectors.includes(s.key);
+      chip.className = 'chip'+(isActive?' active':'');
+      chip.textContent = s.name.split(/[ /]/)[0];
+      chip.title = s.name+': '+s.last.toFixed(0)+' KM';
+      if (isActive) { chip.style.background=COLORS[i]; chip.style.borderColor=COLORS[i]; chip.style.color='#fff'; }
+      chip.onclick = () => {
+        if (activeSectors.includes(s.key)) {
+          if (activeSectors.length===1) return;
+          activeSectors = activeSectors.filter(x=>x!==s.key);
+          chip.classList.remove('active'); chip.style.background=''; chip.style.borderColor=''; chip.style.color='';
+        } else {
+          activeSectors.push(s.key);
+          chip.classList.add('active'); chip.style.background=COLORS[i]; chip.style.borderColor=COLORS[i]; chip.style.color='#fff';
         }
-      });
-    } else {
-      // Samo ukupna razmjena
-      vtChartMain = new Chart(document.getElementById('chartVtMain'), {
-        type: 'line',
-        data: { labels: showLabels, datasets: [
-          { label: 'Ukupna razmjena', data: showPeriods.map(p=>uk[p]?+(uk[p]/1e9).toFixed(3):null),
-            borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }
-        ]},
-        options: { ...chartDefaults,
-          plugins: { ...chartDefaults.plugins, legend: { display: false },
-            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } } },
-          scales: { ...chartDefaults.scales,
-            x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } },
-            y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
-          }
-        }
-      });
-    }
+        renderPlaceMain(sheet, sectors, periods, labels, COLORS, top6);
+      };
+      chipsEl.appendChild(chip);
+    });
 
-    // GODIŠNJI BAR CHART
-    new Chart(document.getElementById('chartVtDeficit'), {
+    renderPlaceMain(sheet, sectors, periods, labels, COLORS, top6);
+
+    new Chart(document.getElementById('chartPlaceSektori'), {
       type: 'bar',
-      data: { labels: annYears,
-        datasets: hasEx && hasIm ? [
-          { label: 'Izvoz', data: annYears.map(y => annual[y]?.ex || null), backgroundColor: 'rgba(21,128,61,0.8)', borderRadius: 3 },
-          { label: 'Uvoz', data: annYears.map(y => annual[y]?.im || null), backgroundColor: 'rgba(185,28,28,0.7)', borderRadius: 3 },
-        ] : [
-          { label: 'Ukupna razmjena', data: annYears.map(y => annual[y]?.uk || null),
-            backgroundColor: 'rgba(26,86,219,0.8)', borderRadius: 4 }
-        ]
-      },
-      options: { ...chartDefaults,
-        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} mlrd BAM` } } },
-        scales: { ...chartDefaults.scales,
-          y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+' mlrd' } }
-        }
+      data: { labels: sectors.map(s=>s.name.length>18?s.name.slice(0,16)+'..':s.name), datasets: [{ label: 'Neto placa (KM)', data: sectors.map(s=>s.last), backgroundColor: sectors.map((_,i)=>'hsla('+(i*18%360)+',60%,45%,0.8)'), borderRadius: 4 }] },
+      options: { ...chartDefaults, indexAxis: 'y', plugins: { ...chartDefaults.plugins, legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x.toFixed(0)+' KM'}} },
+        scales: { ...chartDefaults.scales, x:{...chartDefaults.scales.x,min:0,ticks:{...chartDefaults.scales.x.ticks,callback:v=>v+' KM'}}, y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,font:{size:10},color:'#374151'}} }
       }
     });
 
-    // DEFICIT ILI YOY CHART
-    if (hasEx && hasIm) {
-      new Chart(document.getElementById('chartVtPokrivenost'), {
-        type: 'bar',
-        data: { labels: labels.slice(-36),
-          datasets: [{ label: 'Deficit (mlrd BAM)', data: deficit.slice(-36),
-            backgroundColor: deficit.slice(-36).map(v => v > 0 ? 'rgba(185,28,28,0.7)' : 'rgba(21,128,61,0.7)'),
-            borderRadius: 3 }]
-        },
-        options: { ...chartDefaults,
-          plugins: { ...chartDefaults.plugins, legend: { display: false },
-            tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } } },
-          scales: { ...chartDefaults.scales,
-            y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
-          }
-        }
-      });
-    } else {
-      new Chart(document.getElementById('chartVtPokrivenost'), {
-        type: 'bar',
-        data: { labels: labels.slice(-36),
-          datasets: [{ label: 'YoY %', data: ukYoY.slice(-36),
-            backgroundColor: ukYoY.slice(-36).map(v => v>=0?'rgba(21,128,61,0.7)':'rgba(185,28,28,0.7)'),
-            borderRadius: 3 }]
-        },
-        options: { ...chartDefaults,
-          plugins: { ...chartDefaults.plugins, legend: { display: false } },
-          scales: { ...chartDefaults.scales,
-            y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } }
-          }
-        }
-      });
-    }
-
-    // TOP HS POGLAVLJA
-    const hsKeys = Object.keys(d).filter(k => !['UK','EX','IM','annual'].includes(k));
-    const last12 = periods.slice(-12);
-    const hsTotals = hsKeys.map(k => ({
-      key: k, name: HS_NAMES[k]||'HS '+k,
-      val: last12.reduce((s,p) => s+(d[k][p]||0), 0)
-    })).sort((a,b) => b.val-a.val).slice(0,10);
-
-    new Chart(document.getElementById('chartVtYoY'), {
-      type: 'bar',
-      data: { labels: hsTotals.map(h => h.name),
-        datasets: [{ label: 'Zadnjih 12mj (mlrd BAM)',
-          data: hsTotals.map(h => +(h.val/1e9).toFixed(2)),
-          backgroundColor: 'rgba(26,86,219,0.75)', borderRadius: 4 }]
-      },
-      options: { ...chartDefaults, indexAxis: 'y',
-        plugins: { ...chartDefaults.plugins, legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(2)} mlrd BAM` } } },
-        scales: { ...chartDefaults.scales,
-          x: { ...chartDefaults.scales.x, min: 0, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v+' mlrd' } },
-          y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, color: '#374151' } }
-        }
-      }
+    const yoyArr = periods.map(p => {
+      const [yr,mo] = p.split('-');
+      const prev = (parseInt(yr)-1)+'-'+mo;
+      const v = keys.map(k=>sheet[k][p]).filter(v=>v), pv = keys.map(k=>sheet[k][prev]).filter(v=>v);
+      if (!v.length||!pv.length) return null;
+      return +((v.reduce((a,b)=>a+b,0)/v.length / (pv.reduce((a,b)=>a+b,0)/pv.length) - 1)*100).toFixed(2);
     });
 
-  } catch(e) {
-    document.getElementById('vt-status').textContent = 'Greška: ' + e.message;
-    console.error('VT error:', e);
-  }
+    new Chart(document.getElementById('chartPlaceYoY'), {
+      type: 'bar', data: { labels: labels.slice(-36), datasets: [{ label: 'YoY %', data: yoyArr.slice(-36), backgroundColor: yoyArr.slice(-36).map(v=>v>=0?'rgba(21,128,61,0.7)':'rgba(185,28,28,0.7)'), borderRadius: 3 }] },
+      options: { ...chartDefaults, plugins:{...chartDefaults.plugins,legend:{display:false}}, scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v.toFixed(0)+'%'}}} }
+    });
+
+  } catch(e) { document.getElementById('place-status').textContent = 'Greska: '+e.message; console.error(e); }
 }
 
-function renderVtCharts(d) {
-  const { s1, s2, sUk, exKey, imKey, ukKey, data } = d;
-
-  // Periodi — zadnjih N, sortirano
-  const allPeriods = Object.keys(sUk).sort((a, b) => {
-    const norm = s => { const [y,m] = s.split('-'); return y + '-' + (m||'').padStart(2,'0'); };
-    return norm(a).localeCompare(norm(b));
-  });
-  const periods = vtRange >= 999 ? allPeriods : allPeriods.slice(-vtRange);
-  const labels = periods.map(p => periodToLabel(p));
-
-  const ex = periods.map(p => s1[p] ? +(s1[p]/1e9).toFixed(3) : null);
-  const im = periods.map(p => s2[p] ? +(s2[p]/1e9).toFixed(3) : null);
-  const uk = periods.map(p => sUk[p] ? +(sUk[p]/1e9).toFixed(3) : null);
-
-  // Deficit = uvoz - izvoz
-  const deficit = periods.map((p, i) => (im[i] != null && ex[i] != null) ? +((im[i] - ex[i])).toFixed(3) : null);
-
-  // Pokrivenost = izvoz/uvoz * 100
-  const pokr = periods.map((p, i) => (im[i] && ex[i]) ? +((ex[i]/im[i])*100).toFixed(1) : null);
-
-  // YoY
-  const calcYoYArr = (series, allPers, selPers) => selPers.map(p => {
-    const yr = p.slice(0,4), rest = p.slice(4);
-    const prev = (parseInt(yr)-1) + rest;
-    const curr = series[p], prevV = series[prev] || series[prev.replace(/-0(\d)$/, '-$1')];
-    return (curr && prevV) ? +((curr/prevV - 1)*100).toFixed(2) : null;
-  });
-
-  const exYoY = calcYoYArr(s1, allPeriods, periods);
-  const imYoY = calcYoYArr(s2, allPeriods, periods);
-
-  // KPI
-  const lastP = periods[periods.length-1];
-  const prevYr = (parseInt(lastP.slice(0,4))-1) + lastP.slice(4);
-  const lastEx = s1[lastP], lastIm = s2[lastP];
-  const lastExYoY = lastEx && s1[prevYr] ? ((lastEx/s1[prevYr])-1)*100 : null;
-  const lastImYoY = lastIm && s2[prevYr] ? ((lastIm/s2[prevYr])-1)*100 : null;
-
-  makeKPI('vt-kpi', [
-    { label: exKey || 'Izvoz', value: lastEx ? (lastEx/1e9).toFixed(2) + ' mlrd' : '—',
-      change: lastExYoY != null ? (lastExYoY>0?'+':'')+lastExYoY.toFixed(1)+'% YoY' : '',
-      changeClass: lastExYoY > 0 ? 'pos' : 'neg' },
-    { label: imKey || 'Uvoz', value: lastIm ? (lastIm/1e9).toFixed(2) + ' mlrd' : '—',
-      change: lastImYoY != null ? (lastImYoY>0?'+':'')+lastImYoY.toFixed(1)+'% YoY' : '',
-      changeClass: lastImYoY > 0 ? 'neg' : 'pos' },
-    { label: 'Deficit', value: (lastIm && lastEx) ? ((lastIm-lastEx)/1e9).toFixed(2) + ' mlrd' : '—',
-      change: periodToLabel(lastP), changeClass: 'neg' },
-    { label: 'Pokrivenost', value: (lastIm && lastEx) ? ((lastEx/lastIm)*100).toFixed(1) + '%' : '—',
-      change: 'Izvoz/Uvoz', changeClass: 'neu' },
-  ]);
-
-  // Glavni chart
-  if (vtChartMain) vtChartMain.destroy();
-  vtChartMain = new Chart(document.getElementById('chartVtMain'), {
+function renderPlaceMain(sheet, sectors, periods, labels, COLORS, top6) {
+  if (placeChartInst) placeChartInst.destroy();
+  placeChartInst = new Chart(document.getElementById('chartPlaceMain'), {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: exKey || 'Izvoz', data: ex, borderColor: '#15803d', backgroundColor: 'rgba(21,128,61,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
-        { label: imKey || 'Uvoz', data: im, borderColor: '#b91c1c', backgroundColor: 'rgba(185,28,28,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 },
-      ]
-    },
-    options: {
-      ...chartDefaults,
-      interaction: { mode: 'index', intersect: false },
-      plugins: { ...chartDefaults.plugins,
-        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(3)} mlrd BAM` } }
-      },
-      scales: { ...chartDefaults.scales,
-        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 12 } },
-        y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } }
-      }
-    }
-  });
-
-  // Deficit chart
-  new Chart(document.getElementById('chartVtDeficit'), {
-    type: 'bar',
-    data: { labels: labels.slice(-36),
-      datasets: [{ label: 'Deficit', data: deficit.slice(-36),
-        backgroundColor: deficit.slice(-36).map(v => v > 0 ? 'rgba(185,28,28,0.7)' : 'rgba(21,128,61,0.7)'),
-        borderRadius: 3 }]
-    },
-    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y,
-        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+' mlrd' } } }
-    }
-  });
-
-  // Pokrivenost chart
-  new Chart(document.getElementById('chartVtPokrivenost'), {
-    type: 'line',
-    data: { labels: labels.slice(-60),
-      datasets: [{ label: 'Pokrivenost (%)', data: pokr.slice(-60),
-        borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)',
-        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1 }]
-    },
-    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales,
-        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 10 } },
-        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } }
-      }
-    }
-  });
-
-  // YoY chart
-  new Chart(document.getElementById('chartVtYoY'), {
-    type: 'bar',
-    data: { labels: labels.slice(-36),
-      datasets: [
-        { label: exKey || 'Izvoz YoY', data: exYoY.slice(-36),
-          backgroundColor: 'rgba(21,128,61,0.7)', borderRadius: 3 },
-        { label: imKey || 'Uvoz YoY', data: imYoY.slice(-36),
-          backgroundColor: 'rgba(185,28,28,0.7)', borderRadius: 3 },
-      ]
-    },
-    options: { ...chartDefaults,
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y,
-        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
+    data: { labels, datasets: activeSectors.map(key => {
+      const i = top6.findIndex(s=>s.key===key);
+      return { label: getN(key), data: periods.map(p=>sheet[key]?.[p]||null), borderColor: COLORS[i]||'#999', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 1 };
+    })},
+    options: { ...chartDefaults, interaction:{mode:'index',intersect:false},
+      plugins:{...chartDefaults.plugins,tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(0)+' KM'}}},
+      scales:{...chartDefaults.scales,x:{...chartDefaults.scales.x,ticks:{...chartDefaults.scales.x.ticks,maxTicksLimit:12}},y:{...chartDefaults.scales.y,min:0,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v+' KM'}}}
     }
   });
 }
