@@ -2255,7 +2255,7 @@ async function initTurizam() {
     const allP = new Set();
     Object.keys(sheet).forEach(k => Object.keys(sheet[k]).forEach(p => allP.add(p)));
     const periods = Array.from(allP).sort((a,b) => {
-      const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
+      const n = s => { const parts = s.split('-'); return parts[0]+'-'+(parts[1]||'00').padStart(2,'0'); };
       return n(a).localeCompare(n(b));
     });
     window._turPeriods = periods;
@@ -2550,7 +2550,7 @@ async function initPlace() {
     const allP = new Set();
     keys.forEach(k => Object.keys(sheet[k]).forEach(p => allP.add(p)));
     const periods = Array.from(allP).sort((a,b) => {
-      const n = s => { const [y,m] = s.split('-'); return y+'-'+m.padStart(2,'0'); };
+      const n = s => { const parts = s.split('-'); return parts[0]+'-'+(parts[1]||'00').padStart(2,'0'); };
       return n(a).localeCompare(n(b));
     });
     const labels = periods.map(p => periodToLabel(p));
