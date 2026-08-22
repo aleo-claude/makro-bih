@@ -1,3 +1,8 @@
+bash
+
+cat /mnt/user-data/outputs/fetch_data.py
+Output
+
 """
 fetch_data.py — Makro BiH
 """
@@ -442,19 +447,28 @@ if __name__ == '__main__':
     print()
     results['vt_detalji'] = fetch_etr_detalji()
     print()
-    results['cpi'] = fetch_standard('cpi','CPI',
+    results['cpi'] = fetch_standard('cpi','Indeks potrosackih cijena (CPI)',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_02.xlsx'],[0,1],'cpi.json')
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/PRC_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/PRC_02.xlsx'],
+        [0,1,2],'cpi.json')
+    print()
+    results['bdp'] = fetch_standard('bdp','Bruto domaci proizvod (BDP)',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_02.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/GDP_01.xlsx'],
+        [0,1,2],'bdp.json')
     print()
     # LAB_01: sheet 0=bruto, sheet 1=neto (ako postoji)
     # LAB_02/03: alternativni izvori neto plaća
     results['place'] = fetch_place_neto_bruto()
     print()
-    results['zaposlenost'] = fetch_standard('zaposlenost','Zaposleni po djelatnostima',
+    results['zaposlenost'] = fetch_standard('zaposlenost','Zaposleni i trziste rada (ARS)',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_04.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_02.xlsx'],
-        [0,1,2],'zaposlenost.json')
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_06.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],
+        [0,1,2,3],'zaposlenost.json')
     print()
     results['nezaposlenost'] = fetch_standard('nezaposlenost','Registrovana nezaposlenost',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_05.xlsx',
