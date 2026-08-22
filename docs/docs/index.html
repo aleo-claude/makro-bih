@@ -555,10 +555,10 @@ input[type="text"] { width: 200px; }
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Cijene</div>
-    <div class="nav-item disabled">
+    <div class="nav-item" onclick="navTo('cpi', this)" data-page="cpi">
       <span class="nav-icon">📈</span>
       Inflacija (CPI)
-      <span class="nav-badge soon">USKORO</span>
+      <span class="nav-badge">BHAS</span>
     </div>
   </div>
 
@@ -1066,6 +1066,34 @@ input[type="text"] { width: 200px; }
     <div id="rada-status" class="note">Učitavam podatke...</div>
   </div>
 
+
+  <!-- CPI -->
+  <div id="page-cpi" class="section-page">
+    <div class="page-header">
+      <h2>Inflacija — Indeks potrošačkih cijena (CPI)</h2>
+      <p>CPI BiH · Baza 2015=100 · Izvor: BHAS PRI_01 · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="cpi-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>CPI indeks — trend</h3></div>
+        <p>Indeks potrošačkih cijena (baza 2015=100) · MoM promjena</p>
+        <div class="chart-wrap tall"><canvas id="chartCpiMain"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>MoM stopa promjene (%)</h3></div>
+        <p>Promjena vs prethodni mjesec (%)</p>
+        <div class="chart-wrap"><canvas id="chartCpiMom"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY stopa inflacije (%)</h3></div>
+        <p>Izračunata iz indeksa vs isti period prethodne godine</p>
+        <div class="chart-wrap"><canvas id="chartCpiYoy"></canvas></div>
+      </div>
+    </div>
+    <div id="cpi-status" class="note">Učitavam podatke...</div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -1077,6 +1105,7 @@ const PAGE_TITLES = {
   place: 'Plaće i zaposlenost',
   turizam: 'Turizam i noćenja',
   trziste_rada: 'Tržište rada',
+  cpi: 'Inflacija (CPI)',
 };
 
 function navTo(pageId, el) {
@@ -1099,6 +1128,7 @@ function navTo(pageId, el) {
   else if (pageId === 'vanjska_trgovina') initVanjskaTrgovina();
   else if (pageId === 'place') initPlace();
   else if (pageId === 'trziste_rada') initTrzisteRada();
+  else if (pageId === 'cpi') initCpi();
   else if (pageId === 'turizam') initTurizam();
 }
 
@@ -2807,6 +2837,116 @@ async function initTrzisteRada() {
 
   } catch(e) {
     document.getElementById('rada-status').textContent = 'Greska: ' + e.message;
+    console.error(e);
+  }
+}
+
+
+// CPI
+let cpiInited = false;
+
+async function initCpi() {
+  if (cpiInited) return;
+  cpiInited = true;
+  const st = document.getElementById('cpi-status');
+  try {
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'cpi.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (!data.data || !data.periods || !data.periods.length) {
+      st.textContent = 'Nema podataka.'; return;
+    }
+
+    const periods = data.periods;
+    const cpiData = data.data;
+
+    // Sortirani periodi
+    const sorted = periods.slice().sort((a,b) => {
+      const n = s => { const pts = s.split('-'); return pts[0]+'-'+(pts[1]||'0').padStart(2,'0'); };
+      return n(a).localeCompare(n(b));
+    });
+
+    const labels = sorted.map(p => periodToLabel(p));
+    const idxVals = sorted.map(p => cpiData[p]?.index || null);
+
+    // Izracunaj MoM iz indeksa
+    const momVals = sorted.map((p, i) => {
+      if (i === 0 || !idxVals[i] || !idxVals[i-1]) return null;
+      return +((idxVals[i]/idxVals[i-1] - 1)*100).toFixed(2);
+    });
+
+    // Izracunaj YoY - isti period prosle godine
+    const yoyVals = sorted.map(p => {
+      const [yr, mo] = p.split('-');
+      const prevP = (parseInt(yr)-1)+'-'+mo;
+      const curr = cpiData[p]?.index;
+      const prev = cpiData[prevP]?.index;
+      return (curr && prev) ? +((curr/prev - 1)*100).toFixed(2) : null;
+    });
+
+    // KPI
+    const lastP = sorted[sorted.length-1];
+    const lastIdx = idxVals[idxVals.length-1];
+    const lastMom = momVals[momVals.length-1];
+    const lastYoy = yoyVals[yoyVals.length-1];
+    const avg12Yoy = yoyVals.filter(v=>v!=null).slice(-12).reduce((a,b)=>a+b,0) / yoyVals.filter(v=>v!=null).slice(-12).length;
+
+    makeKPI('cpi-kpi', [
+      { label: 'CPI indeks', value: lastIdx ? lastIdx.toFixed(1) : '-', change: periodToLabel(lastP)+' (baza 2015=100)', changeClass: 'neu' },
+      { label: 'MoM inflacija', value: lastMom != null ? (lastMom>0?'+':'')+lastMom.toFixed(2)+'%' : '-', changeClass: lastMom > 0 ? 'neg' : lastMom < 0 ? 'pos' : 'neu' },
+      { label: 'YoY inflacija', value: lastYoy != null ? (lastYoy>0?'+':'')+lastYoy.toFixed(1)+'%' : '-', changeClass: lastYoy > 2 ? 'neg' : lastYoy < 0 ? 'pos' : 'neu' },
+      { label: 'Prosjek YoY 12M', value: avg12Yoy ? (avg12Yoy>0?'+':'')+avg12Yoy.toFixed(1)+'%' : '-', changeClass: avg12Yoy > 2 ? 'neg' : 'neu' },
+    ]);
+
+    st.innerHTML = 'Izvor: <a href="https://bhas.gov.ba/Calendar/Category/10" target="_blank">BHAS PRI_01</a> · CPI baza 2015=100 · Azurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
+
+    // Glavni chart
+    new Chart(document.getElementById('chartCpiMain'), {
+      type: 'line',
+      data: { labels, datasets: [
+        { label: 'CPI indeks (2015=100)', data: idxVals, borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 2 },
+      ]},
+      options: { ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' CPI: '+ctx.parsed.y?.toFixed(1)+' (2015=100)' } }
+        },
+        scales: { ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) } }
+        }
+      }
+    });
+
+    // MoM chart
+    new Chart(document.getElementById('chartCpiMom'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'MoM %', data: momVals,
+        backgroundColor: momVals.map(v => v > 0 ? 'rgba(185,28,28,0.7)' : v < 0 ? 'rgba(21,128,61,0.7)' : 'rgba(107,114,128,0.4)'),
+        borderRadius: 3 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' MoM: '+(ctx.parsed.y>0?'+':'')+ctx.parsed.y?.toFixed(2)+'%' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+'%' } } }
+      }
+    });
+
+    // YoY chart
+    new Chart(document.getElementById('chartCpiYoy'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'YoY %', data: yoyVals,
+        backgroundColor: yoyVals.map(v => v > 3 ? 'rgba(185,28,28,0.8)' : v > 0 ? 'rgba(185,28,28,0.45)' : 'rgba(21,128,61,0.7)'),
+        borderRadius: 3 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' YoY: '+(ctx.parsed.y>0?'+':'')+ctx.parsed.y?.toFixed(1)+'%' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(1)+'%' } } }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('cpi-status').textContent = 'Greska: ' + e.message;
     console.error(e);
   }
 }
