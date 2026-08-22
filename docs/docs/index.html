@@ -546,6 +546,11 @@ input[type="text"] { width: 200px; }
       Plaće i zaposlenost
       <span class="nav-badge">BHAS</span>
     </div>
+    <div class="nav-item" onclick="navTo('trziste_rada', this)" data-page="trziste_rada">
+      <span class="nav-icon">👷</span>
+      Tržište rada
+      <span class="nav-badge">BHAS</span>
+    </div>
   </div>
 
   <div class="sidebar-section">
@@ -1033,6 +1038,34 @@ input[type="text"] { width: 200px; }
     <div id="tur-status" class="note">Učitavam podatke...</div>
   </div>
 
+
+  <!-- TRZISTE RADA -->
+  <div id="page-trziste_rada" class="section-page">
+    <div class="page-header">
+      <h2>Tržište rada BiH</h2>
+      <p>Nezaposleni i stopa zaposlenosti · Izvor: BHAS LAB_05/06 (ARS) · Godišnji podaci</p>
+    </div>
+    <div id="rada-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="cc-header"><h3>Broj nezaposlenih (000)</h3></div>
+        <p>Registrovana nezaposlenost ukupno, muškarci, žene (000 osoba)</p>
+        <div class="chart-wrap tall"><canvas id="chartRadaNez"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Stopa zaposlenosti (%)</h3></div>
+        <p>Udio zaposlenih u radno sposobnom stanovništvu (%)</p>
+        <div class="chart-wrap tall"><canvas id="chartRadaZap"></canvas></div>
+      </div>
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Trend — nezaposleni vs stopa zaposlenosti</h3></div>
+        <p>Kombinirani prikaz oba indikatora</p>
+        <div class="chart-wrap"><canvas id="chartRadaTrend"></canvas></div>
+      </div>
+    </div>
+    <div id="rada-status" class="note">Učitavam podatke...</div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -1043,6 +1076,7 @@ const PAGE_TITLES = {
   vanjska_trgovina: 'Vanjska trgovina',
   place: 'Plaće i zaposlenost',
   turizam: 'Turizam i noćenja',
+  trziste_rada: 'Tržište rada',
 };
 
 function navTo(pageId, el) {
@@ -1064,6 +1098,7 @@ function navTo(pageId, el) {
   else if (pageId === 'industrija') initIndustrija();
   else if (pageId === 'vanjska_trgovina') initVanjskaTrgovina();
   else if (pageId === 'place') initPlace();
+  else if (pageId === 'trziste_rada') initTrzisteRada();
   else if (pageId === 'turizam') initTurizam();
 }
 
@@ -2644,6 +2679,136 @@ function renderPlaceMain(sheet, sectors, periods, labels, COLORS, top6) {
       scales:{...chartDefaults.scales,x:{...chartDefaults.scales.x,ticks:{...chartDefaults.scales.x.ticks,maxTicksLimit:12}},y:{...chartDefaults.scales.y,min:0,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v+' KM'}}}
     }
   });
+}
+
+
+// TRZISTE RADA
+let radaInited = false;
+
+async function initTrzisteRada() {
+  if (radaInited) return;
+  radaInited = true;
+  const st = document.getElementById('rada-status');
+
+  try {
+    st.textContent = 'Ucitavam...';
+
+    // Ucitaj oba dataseta paralelno
+    const [r1, r2] = await Promise.all([
+      fetch(DATA_BASE + 'zaposlenost.json'),
+      fetch(DATA_BASE + 'nezaposlenost.json')
+    ]);
+
+    const nez = r1.ok ? await r1.json() : null;  // broj nezaposlenih
+    const zap = r2.ok ? await r2.json() : null;  // stopa zaposlenosti
+
+    if (!nez && !zap) { st.textContent = 'Nema podataka.'; return; }
+
+    // Nezaposleni (zaposlenost.json ima broj nezaposlenih u 000)
+    const nezSheet = nez && nez.sheets ? Object.values(nez.sheets)[0] : {};
+    const nezUk = nezSheet['Ukupno'] || {};
+    const nezM = nezSheet['Muškarci'] || nezSheet['Muskarci'] || {};
+    const nezZ = nezSheet['Žene'] || nezSheet['Zene'] || {};
+
+    // Stopa zaposlenosti (nezaposlenost.json ima stopu zaposlenosti)
+    const zapSheet = zap && zap.sheets ? Object.values(zap.sheets)[0] : {};
+    const zapUk = zapSheet['Ukupno'] || {};
+    const zapM = zapSheet['Muškarci'] || zapSheet['Muskarci'] || {};
+    const zapZ = zapSheet['Žene'] || zapSheet['Zene'] || {};
+
+    // Zajednicke godine
+    const years = [...new Set([...Object.keys(nezUk), ...Object.keys(zapUk)])].sort();
+
+    // KPI - zadnja godina
+    const lastYr = years[years.length-1];
+    const prevYr = years[years.length-2];
+    const lastNez = nezUk[lastYr];
+    const prevNez = nezUk[prevYr];
+    const lastZap = zapUk[lastYr];
+    const nezChange = (lastNez && prevNez) ? lastNez - prevNez : null;
+    const zapChange = (lastZap && zapUk[prevYr]) ? lastZap - zapUk[prevYr] : null;
+
+    makeKPI('rada-kpi', [
+      { label: 'Nezaposleni ' + lastYr, value: lastNez ? lastNez.toFixed(0)+'K' : '-',
+        change: nezChange != null ? (nezChange>0?'+':'')+nezChange.toFixed(0)+'K vs '+prevYr : '',
+        changeClass: nezChange < 0 ? 'pos' : 'neg' },
+      { label: 'Stopa zaposlenosti', value: lastZap ? lastZap.toFixed(1)+'%' : '-',
+        change: zapChange != null ? (zapChange>0?'+':'')+zapChange.toFixed(1)+'pp vs '+prevYr : '',
+        changeClass: zapChange > 0 ? 'pos' : 'neg' },
+      { label: 'Žene nezaposlene', value: nezZ[lastYr] ? nezZ[lastYr].toFixed(0)+'K' : '-',
+        change: 'Muškarci: '+(nezM[lastYr]||'-')+'K', changeClass: 'neu' },
+      { label: 'Stopa zap. žene', value: zapZ[lastYr] ? zapZ[lastYr].toFixed(1)+'%' : '-',
+        change: 'Muškarci: '+(zapM[lastYr]||'-')+'%', changeClass: 'neu' },
+    ]);
+
+    st.innerHTML = 'Izvor: <a href="https://bhas.gov.ba/Calendar/Category/7" target="_blank">BHAS LAB_05/06 (Anketa o radnoj snazi)</a> · Godišnji podaci · ' + lastYr;
+    st.style.borderLeftColor = 'var(--pos)';
+
+    // Nezaposleni chart
+    new Chart(document.getElementById('chartRadaNez'), {
+      type: 'bar',
+      data: {
+        labels: years,
+        datasets: [
+          { label: 'Ukupno (000)', data: years.map(y => nezUk[y]||null), backgroundColor: 'rgba(185,28,28,0.7)', borderRadius: 4 },
+          { label: 'Žene (000)', data: years.map(y => nezZ[y]||null), backgroundColor: 'rgba(185,28,28,0.4)', borderRadius: 4 },
+          { label: 'Muškarci (000)', data: years.map(y => nezM[y]||null), backgroundColor: 'rgba(107,114,128,0.5)', borderRadius: 4 },
+        ]
+      },
+      options: { ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(0)+'K' } } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'K' } } }
+      }
+    });
+
+    // Stopa zaposlenosti chart
+    new Chart(document.getElementById('chartRadaZap'), {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets: [
+          { label: 'Ukupno', data: years.map(y => zapUk[y]||null), borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+          { label: 'Muškarci', data: years.map(y => zapM[y]||null), borderColor: '#15803d', backgroundColor: 'transparent', tension: 0.3, borderWidth: 1.5, pointRadius: 3 },
+          { label: 'Žene', data: years.map(y => zapZ[y]||null), borderColor: '#b91c1c', backgroundColor: 'transparent', tension: 0.3, borderWidth: 1.5, pointRadius: 3 },
+        ]
+      },
+      options: { ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(1)+'%' } } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
+      }
+    });
+
+    // Kombinirani trend - dual axis
+    new Chart(document.getElementById('chartRadaTrend'), {
+      type: 'bar',
+      data: {
+        labels: years,
+        datasets: [
+          { label: 'Nezaposleni (000)', data: years.map(y => nezUk[y]||null),
+            backgroundColor: 'rgba(185,28,28,0.6)', borderRadius: 4, yAxisID: 'y' },
+          { label: 'Stopa zaposlenosti (%)', data: years.map(y => zapUk[y]||null),
+            type: 'line', borderColor: '#1a56db', backgroundColor: 'transparent',
+            tension: 0.3, borderWidth: 2.5, pointRadius: 5, yAxisID: 'y2' },
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { ...chartDefaults.plugins },
+        scales: {
+          ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, min: 0, position: 'left', ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'K' } },
+          y2: { type: 'linear', position: 'right', min: 60, max: 75,
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#1a56db', callback: v => v+'%' } }
+        }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('rada-status').textContent = 'Greska: ' + e.message;
+    console.error(e);
+  }
 }
 
 </script>
