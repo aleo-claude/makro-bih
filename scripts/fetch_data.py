@@ -422,6 +422,76 @@ def fetch_place_neto_bruto():
     })
     return True
 
+
+def fetch_cpi_pdf():
+    """Parsira BHAS PDF saopstenja za CPI - PRI_01_YYYY_MM_1_BS.pdf"""
+    print("-> CPI inflacija (BHAS PDF PRI_01)...")
+    from datetime import date
+    import re as re2
+    today = date.today()
+    cpi_data = {}
+
+    for delta in range(0, 36):
+        month = today.month - delta
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        period = str(year) + "-" + str(month)
+
+        for lang in ["BS", "HR"]:
+            url = f"https://bhas.gov.ba/data/Publikacije/Saopstenja/{year}/PRI_01_{year}_{month:02d}_1_{lang}.pdf"
+            try:
+                r = requests.get(url, headers=HEADERS, timeout=20)
+                if r.status_code != 200 or len(r.content) < 3000:
+                    continue
+                with pdfplumber.open(BytesIO(r.content)) as pdf:
+                    text = ""
+                    for page in pdf.pages[:2]:
+                        t = page.extract_text()
+                        if t: text += t + "\n"
+                if not text: continue
+
+                for line in text.split("\n"):
+                    if any(kw in line.upper() for kw in ["UKUPNO", "TOTAL", "CPI", "INDEKS"]):
+                        nums = re2.findall(r"-?\d+\.\d+", line)
+                        if len(nums) >= 2:
+                            try:
+                                vals = [float(n) for n in nums]
+                                idx_c = [v for v in vals if 90 <= v <= 200]
+                                yoy_c = [v for v in vals if -10 <= v <= 30]
+                                if idx_c or yoy_c:
+                                    cpi_data[period] = {
+                                        "index": idx_c[0] if idx_c else None,
+                                        "yoy": yoy_c[-1] if yoy_c else None,
+                                    }
+                                    print(f"  OK {period} ({lang}): idx={idx_c[0] if idx_c else '-'}, yoy={yoy_c[-1] if yoy_c else '-'}")
+                                    break
+                            except:
+                                pass
+                if period in cpi_data:
+                    break
+            except Exception:
+                pass
+
+    if not cpi_data:
+        print("  Nema CPI podataka")
+        path = os.path.join(DATA_DIR, "cpi.json")
+        if not os.path.exists(path):
+            save_json("cpi.json", {"source":"BHAS","error":"PDF nije dostupan","updated":datetime.now().isoformat()[:10],"data":{}})
+        return False
+
+    sorted_p = sort_periods(list(cpi_data.keys()))
+    save_json("cpi.json", {
+        "source": "BHAS PRI_01",
+        "name": "Indeks potrosackih cijena (CPI) BiH",
+        "updated": datetime.now().isoformat()[:10],
+        "note": "Parsiran iz PDF saopstenja, baza 2015=100",
+        "periods": sorted_p,
+        "data": {p: cpi_data[p] for p in sorted_p}
+    })
+    return True
+
 if __name__ == '__main__':
     print(f"\n{'='*55}")
     print(f"Makro BiH - Osvjezavanje podataka")
@@ -442,11 +512,7 @@ if __name__ == '__main__':
     print()
     results['vt_detalji'] = fetch_etr_detalji()
     print()
-    results['cpi'] = fetch_standard('cpi','Indeks potrosackih cijena (CPI)',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/CPI_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/PRC_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/PRC_02.xlsx'],
-        [0,1,2],'cpi.json')
+    results['cpi'] = fetch_cpi_pdf()
     print()
     results['bdp'] = fetch_standard('bdp','Bruto domaci proizvod (BDP)',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_01.xlsx',
