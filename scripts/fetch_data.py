@@ -1,8 +1,3 @@
-bash
-
-cat /mnt/user-data/outputs/fetch_data.py
-Output
-
 """
 fetch_data.py — Makro BiH
 """
