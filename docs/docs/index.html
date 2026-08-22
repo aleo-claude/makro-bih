@@ -2298,8 +2298,12 @@ async function initTurizam() {
     // Sezonalnost
     const mData = Array(12).fill(0).map(() => ({ s: 0, n: 0 }));
     Object.entries(ukNt).forEach(([p, v]) => {
+      if (!p || !p.includes('-')) return;
       const [yr, mo] = p.split('-');
-      if (parseInt(yr) >= lastYr-2 && parseInt(yr) <= lastYr) { mData[parseInt(mo)-1].s += v; mData[parseInt(mo)-1].n++; }
+      if (!yr || !mo) return;
+      const moIdx = parseInt(mo)-1;
+      if (moIdx < 0 || moIdx > 11) return;
+      if (parseInt(yr) >= lastYr-2 && parseInt(yr) <= lastYr) { mData[moIdx].s += v; mData[moIdx].n++; }
     });
     const mAvg = mData.map(d => d.n ? Math.round(d.s/d.n) : null);
     new Chart(document.getElementById('chartTurSezona'), {
