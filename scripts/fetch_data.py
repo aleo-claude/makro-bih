@@ -287,40 +287,111 @@ def fetch_cpi_pdf():
 
 
 def fetch_place_neto_bruto():
-    """Preuzima place s BHAS LAB_01 - sve sheetove"""
-    print("-> Place neto i bruto po sektorima (BHAS LAB)...")
-    urls = [
+    """
+    Parsira BHAS LAB_04 PDF saopstenja za prosjecne place u BiH.
+    LAB_04 = prosjecna neto/bruto placa za SVE zaposlene u BiH.
+    URL: https://bhas.gov.ba/data/Publikacije/Saopstenja/YYYY/LAB_04_YYYY_MM_1_BS.pdf
+    Zadrzava i LAB_01 Excel za podatke po sektorima.
+    """
+    print("-> Place neto i bruto (BHAS LAB_04 PDF + LAB_01 Excel)...")
+    from datetime import date
+    import re as re2
+    today = date.today()
+
+    # 1. Parsira LAB_04 PDF za prosjecnu placu - svi zaposleni u BiH
+    place_data = {}  # period -> {neto, bruto, yoy_neto}
+
+    for delta in range(0, 36):
+        month = today.month - delta
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        period = str(year) + "-" + str(month)
+
+        for lang in ["BS", "HR"]:
+            url = f"https://bhas.gov.ba/data/Publikacije/Saopstenja/{year}/LAB_04_{year}_{month:02d}_1_{lang}.pdf"
+            try:
+                r = requests.get(url, headers=HEADERS, timeout=15)
+                if r.status_code != 200 or len(r.content) < 3000: continue
+
+                with pdfplumber.open(BytesIO(r.content)) as pdf:
+                    text = "".join(p.extract_text() or "" for p in pdf.pages[:2])
+                if not text: continue
+
+                entry = {}
+                for line in text.split("\n"):
+                    nums = re2.findall(r"\b(\d{3,4})\b", line)
+                    vals = []
+                    for n in nums:
+                        try:
+                            v = int(n)
+                            # Neto placa u BiH je tipicno 1000-3000 KM
+                            if 700 <= v <= 5000:
+                                vals.append(v)
+                        except: pass
+
+                    if not vals: continue
+                    line_lower = line.lower()
+
+                    # Prosjecna neto placa
+                    if any(k in line_lower for k in ["neto", "net"]):
+                        if not entry.get("neto") and vals:
+                            # Uzmi prvu razumnu vrijednost
+                            for v in sorted(vals):
+                                if 800 <= v <= 3000:
+                                    entry["neto"] = v
+                                    break
+
+                    # Prosjecna bruto placa
+                    if any(k in line_lower for k in ["bruto", "gross", "brut"]):
+                        if not entry.get("bruto") and vals:
+                            for v in sorted(vals):
+                                if 1200 <= v <= 5000:
+                                    entry["bruto"] = v
+                                    break
+
+                if entry.get("neto"):
+                    place_data[period] = entry
+                    print(f"  OK {period} ({lang}): neto={entry.get('neto')} KM, bruto={entry.get('bruto','-')} KM")
+                    break
+
+            except Exception: pass
+
+    # 2. Uzmi i sektorske podatke iz LAB_01 Excel
+    sektori = {}
+    for url in [
         "https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx",
-        "https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx",
-        "https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_03.xlsx",
-    ]
-    all_sheets = {}
-    used_url = None
-    for url in urls:
-        fname = url.split("/")[-1]
+    ]:
         try:
-            print(f"  Probam: {fname}")
             xls = fetch_excel(url)
             wb = openpyxl.load_workbook(xls, data_only=True)
-            print(f"    Sheetovi: {wb.sheetnames}")
-            for idx, sname in enumerate(wb.sheetnames[:4]):
+            for sname in wb.sheetnames[:1]:
                 parsed = parse_sheet(wb[sname])
                 if parsed:
-                    compact = compact_series(parsed, n_periods=72)
-                    all_sheets[sname] = compact
-                    first = next(iter(compact.values()))
-                    print(f"    OK '{sname}': {len(compact)} serija, {len(first)} perioda")
-            if all_sheets:
-                used_url = url
-                break
+                    sektori[sname] = compact_series(parsed, n_periods=72)
+                    print(f"  OK Sektori '{sname}': {len(sektori[sname])} serija")
+            break
         except Exception as e:
-            print(f"  X {fname}: {e}")
-    if not all_sheets:
+            print(f"  X LAB_01: {e}")
+
+    if not place_data and not sektori:
         path = os.path.join(DATA_DIR, "place.json")
         if not os.path.exists(path):
             save_json("place.json", {"source":"BHAS","error":"Nedostupno","updated":datetime.now().isoformat()[:10],"sheets":{}})
         return False
-    save_json("place.json", {"source":"BHAS","name":"Place neto i bruto po sektorima","url":used_url,"updated":datetime.now().isoformat()[:10],"sheets":all_sheets})
+
+    # Spremi kombinirano
+    sorted_p = sort_periods(list(place_data.keys())) if place_data else []
+    save_json("place.json", {
+        "source": "BHAS LAB_04/LAB_01",
+        "name": "Prosjecne place i place po sektorima BiH",
+        "updated": datetime.now().isoformat()[:10],
+        "note": "LAB_04=prosjecna placa svih zaposlenih, LAB_01=placa po sektorima",
+        "periods": sorted_p,
+        "place_bih": {p: place_data[p] for p in sorted_p},
+        "sheets": sektori
+    })
     return True
 
 
