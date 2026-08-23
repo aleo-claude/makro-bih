@@ -275,8 +275,6 @@ if __name__ == '__main__':
     print()
     results['vanjska_trgovina'] = fetch_vanjska_trgovina()
     print()
-    results['vt_detalji'] = fetch_etr_detalji()
-    print()
     results['cpi'] = fetch_cpi_pdf()
     print()
     results['bdp'] = fetch_standard('bdp', 'BDP',
