@@ -289,7 +289,8 @@ def fetch_cpi_pdf():
 def fetch_place_neto_bruto():
     """
     Parsira BHAS LAB_04 PDF saopstenja za prosjecne place u BiH.
-    Prosjecna neto placa za SVE zaposlene u BiH (1400-2000 KM).
+    Format: "iznosi 1 684 KM" - broj je split u dva dijela razmakom.
+    PDF takodje sadrzi podatke po svim sektorima za tekuci i prethodne godine.
     """
     print("-> Place neto i bruto (BHAS LAB_04 PDF + LAB_01 Excel)...")
     from datetime import date
@@ -317,43 +318,42 @@ def fetch_place_neto_bruto():
                 if not text: continue
 
                 entry = {}
-                for line in text.split("\n"):
-                    # Trazi 4-cifrene brojeve koji NISU godina (ne 2020-2030)
-                    nums = re2.findall(r"\b(\d{4})\b", line)
-                    vals = []
-                    for n in nums:
+
+                # Trazi pattern "iznosi X YYY KM" ili "iznosila je X YYY KM"
+                # gdje je broj split kao "1 684" ili "1644" ili samo "838"
+                patterns_neto = [
+                    r"iznosila je (\d{1,2} \d{3}) KM",
+                    r"iznosi (\d{1,2} \d{3}) KM",
+                    r"amounted to (\d{1,2} \d{3}) KM",
+                    r"iznosila je (\d{3,4}) KM",
+                    r"iznosi (\d{3,4}) KM",
+                    r"amounted to (\d{3,4}) KM",
+                ]
+
+                for pat in patterns_neto:
+                    m = re2.search(pat, text, re2.IGNORECASE)
+                    if m:
                         try:
-                            v = int(n)
-                            # Placa je 1000-3000 KM, nisu godine
-                            if 1000 <= v <= 3000:
-                                vals.append(v)
+                            val = int(m.group(1).replace(" ", ""))
+                            if 700 <= val <= 3000:
+                                entry["neto"] = val
+                                break
                         except: pass
 
-                    # Takodje trazi 3-cifrene (800-999)
-                    nums3 = re2.findall(r"\b([89]\d{2})\b", line)
-                    for n in nums3:
+                # Bruto - slican pattern ali veci iznos
+                patterns_bruto = [
+                    r"bruto plac[ae][^\d]+(\d{1,2} \d{3}) KM",
+                    r"gross wage[^\d]+(\d{1,2} \d{3}) KM",
+                ]
+                for pat in patterns_bruto:
+                    m = re2.search(pat, text, re2.IGNORECASE)
+                    if m:
                         try:
-                            v = int(n)
-                            if 800 <= v <= 999:
-                                vals.append(v)
+                            val = int(m.group(1).replace(" ", ""))
+                            if 1000 <= val <= 5000:
+                                entry["bruto"] = val
+                                break
                         except: pass
-
-                    if not vals: continue
-                    line_lower = line.lower()
-
-                    if any(k in line_lower for k in ["neto", "net wage", "neto plac"]):
-                        if not entry.get("neto"):
-                            for v in sorted(vals):
-                                if 1000 <= v <= 2500:
-                                    entry["neto"] = v
-                                    break
-
-                    if any(k in line_lower for k in ["bruto", "gross", "bruto plac"]):
-                        if not entry.get("bruto"):
-                            for v in sorted(vals):
-                                if 1500 <= v <= 4000:
-                                    entry["bruto"] = v
-                                    break
 
                 if entry.get("neto"):
                     place_data[period] = entry
@@ -362,7 +362,7 @@ def fetch_place_neto_bruto():
 
             except Exception: pass
 
-    # Sektori iz LAB_01 Excel
+    # Sektori iz LAB_01 Excel (ili iz LAB_04 PDF tablice po sektorima)
     sektori = {}
     try:
         xls = fetch_excel("https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx")
