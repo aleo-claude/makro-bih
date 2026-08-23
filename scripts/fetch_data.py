@@ -235,18 +235,21 @@ def fetch_vanjska_trgovina():
     return True
 
 def update_meta(results):
-    meta = {'last_run': datetime.now().isoformat(),
-            'updated': datetime.now().isoformat()[:10],
-            'datasets': {}}
-    for fname in ['maloprodaja.json','turizam.json','industrija.json',
-                  'vanjska_trgovina.json','cpi.json','place.json']:
+    meta = {'last_run': datetime.now().isoformat(), 'updated': datetime.now().isoformat()[:10], 'datasets': {}}
+    dataset_files = [
+        ('maloprodaja', 'maloprodaja.json'), ('turizam', 'turizam.json'),
+        ('industrija', 'industrija.json'), ('vanjska_trgovina', 'vanjska_trgovina.json'),
+        ('cpi', 'cpi.json'), ('place', 'place.json'),
+        ('zaposlenost', 'zaposlenost.json'), ('nezaposlenost', 'nezaposlenost.json'),
+        ('uino_porezi', 'uino_porezi.json'), ('vozila', 'vozila.json'),
+    ]
+    for key, fname in dataset_files:
         path = os.path.join(DATA_DIR, fname)
         if os.path.exists(path):
-            with open(path) as f: d = json.load(f)
-            key = fname.replace('.json','')
+            with open(path) as f:
+                d = json.load(f)
             meta['datasets'][key] = {
-                'name': d.get('name', key),
-                'updated': d.get('updated'),
+                'name': d.get('name', key), 'updated': d.get('updated'),
                 'has_data': bool(d.get('sheets') or d.get('data')),
                 'has_error': 'error' in d,
                 'size_kb': os.path.getsize(path) // 1024
@@ -254,395 +257,58 @@ def update_meta(results):
     save_json('meta.json', meta)
 
 
-# ─────────────────────────────────────────────────────────────
-# DODATAK: fetch_vanjska_trgovina_detalji
-# Parsira BHAS saopštenja (PDF) za zasebni izvoz i uvoz
-# ─────────────────────────────────────────────────────────────
-def fetch_etr_detalji():
-    """
-    Parsira BHAS PDF saopštenja za vanjsku trgovinu.
-    Svako saopštenje sadrži tablicu: Izvoz i Uvoz po mjesecima.
-    URL: https://bhas.gov.ba/data/Publikacije/Saopstenja/YYYY/ETR_01_YYYY_MM_1_BS.pdf
-    """
-    print("-> Vanjska trgovina detalji (BHAS PDF saopstenja)...")
-    
-    try:
-        import pdfplumber
-    except ImportError:
-        os.system("pip install pdfplumber")
-        import pdfplumber
-    
-    results_ex = {}  # izvoz po periodu
-    results_im = {}  # uvoz po periodu
-    
-    # Generiraj URL-ove za zadnjih 30 mjeseci
-    from datetime import date
-    today = date.today()
-    
-    for delta in range(0, 30):
-        month = today.month - delta
-        year = today.year
-        while month <= 0:
-            month += 12
-            year -= 1
-        
-        period = f"{year}-{month}"
-        
-        # Probaj BS i HR verziju
-        for lang in ['BS', 'HR']:
-            url = f"https://bhas.gov.ba/data/Publikacije/Saopstenja/{year}/ETR_01_{year}_{month:02d}_1_{lang}.pdf"
-            try:
-                r = requests.get(url, headers=HEADERS, timeout=20)
-                if r.status_code != 200 or len(r.content) < 5000:
-                    continue
-                
-                with pdfplumber.open(BytesIO(r.content)) as pdf:
-                    text = ""
-                    for page in pdf.pages[:2]:
-                        t = page.extract_text()
-                        if t:
-                            text += t + "\n"
-                
-                if not text:
-                    continue
-                
-                # Parsira tablicu UKUPNO/TOTAL
-                # Format: UKUPNO TOTAL [ex_prev] [ex_curr] [im_prev] [im_curr] ...
-                import re
-                
-                # Traži redak s UKUPNO i brojeve
-                for line in text.split('\n'):
-                    if 'UKUPNO' in line or ('TOTAL' in line and any(c.isdigit() for c in line)):
-                        # Izvuci sve grupe cifara (000 KM)
-                        nums = re.findall(r'(\d[\d\s]{3,12}\d)', line)
-                        cleaned = []
-                        for n in nums:
-                            try:
-                                val = int(n.replace(' ', ''))
-                                if 500000 < val < 5000000:  # razumne vrijednosti u 000 KM
-                                    cleaned.append(val * 1000)  # pretvori u KM
-                            except:
-                                pass
-                        
-                        if len(cleaned) >= 4:
-                            # Format: [ex_prev, ex_curr, im_prev, im_curr, ...]
-                            # ili [ex_prev, im_prev, ex_curr, im_curr, ...]
-                            # Odredit ćemo na osnovu veličine (uvoz je veći od izvoza)
-                            ex_curr = min(cleaned[1], cleaned[0])
-                            im_curr = max(cleaned[1], cleaned[0])
-                            if len(cleaned) >= 4:
-                                # Probaj 3. i 4. broj kao curr period
-                                if cleaned[2] < cleaned[3]:
-                                    ex_curr = cleaned[2]
-                                    im_curr = cleaned[3]
-                                else:
-                                    ex_curr = cleaned[3]
-                                    im_curr = cleaned[2]
-                            
-                            results_ex[period] = ex_curr
-                            results_im[period] = im_curr
-                            print(f"  OK {period} ({lang}): Ex={ex_curr/1e9:.3f}, Im={im_curr/1e9:.3f} mlrd")
-                            break
-                
-                if period in results_ex:
-                    break  # Ne trebamo drugu jezičnu verziju
-                    
-            except Exception as e:
-                pass
-    
-    if not results_ex:
-        print("  Nema podataka iz PDF saopstenja")
-        return False
-    
-    # Spremi u poseban JSON
-    save_json('vt_detalji.json', {
-        'source': 'BHAS PDF Saopstenja',
-        'name': 'Vanjska trgovina - Izvoz i Uvoz zasebno',
-        'updated': datetime.now().isoformat()[:10],
-        'note': 'Izvoz i uvoz u KM, parsiran iz PDF saopstenja',
-        'EX': results_ex,
-        'IM': results_im,
-    })
-    return True
+if __name__ == '__main__':
+    print(f"\n{'='*55}")
+    print(f"Makro BiH - Osvjezavanje podataka")
+    print(f"Datum: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"{'='*55}\n")
 
-def fetch_place_neto_bruto():
-    """
-    Preuzima plaće s BHAS LAB_01:
-    - Sheet 0: NPL BPL = bruto plaće po sektorima  
-    - Sheet 1: NPL NPL = neto plaće po sektorima (ako postoji)
-    Probava i LAB_02/03 za neto.
-    """
-    print("-> Place neto i bruto po sektorima (BHAS LAB)...")
-    
-    urls = [
-        'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx',
-        'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
-        'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_03.xlsx',
-    ]
-    
-    all_sheets = {}
-    used_url = None
-    
-    for url in urls:
-        fname = url.split('/')[-1]
-        try:
-            print(f"  Probam: {fname}")
-            xls = fetch_excel(url)
-            wb = openpyxl.load_workbook(xls, data_only=True)
-            
-            print(f"    Sheetovi: {wb.sheetnames}")
-            
-            for idx, sname in enumerate(wb.sheetnames[:4]):
-                parsed = parse_sheet(wb[sname])
-                if parsed:
-                    compact = compact_series(parsed, n_periods=72)
-                    all_sheets[sname] = compact
-                    first = next(iter(compact.values()))
-                    print(f"    OK '{sname}': {len(compact)} serija, {len(first)} perioda")
-            
-            if all_sheets:
-                used_url = url
-                break
-        except Exception as e:
-            print(f"  X {fname}: {e}")
-    
-    if not all_sheets:
-        path = os.path.join(DATA_DIR, 'place.json')
-        if not os.path.exists(path):
-            save_json('place.json', {'source':'BHAS','error':'Nedostupno',
-                                     'updated':datetime.now().isoformat()[:10],'sheets':{}})
-        return False
-    
-    save_json('place.json', {
-        'source': 'BHAS',
-        'name': 'Place neto i bruto po sektorima',
-        'url': used_url,
-        'updated': datetime.now().isoformat()[:10],
-        'sheets': all_sheets
-    })
-    return True
-
-
-def fetch_cpi_pdf():
-    """Parsira BHAS PDF saopstenja za CPI - PRI_01_YYYY_MM_1_BS.pdf"""
-    print("-> CPI inflacija (BHAS PDF PRI_01)...")
-    from datetime import date
-    import re as re2
-    today = date.today()
-    cpi_data = {}
-
-    for delta in range(0, 36):
-        month = today.month - delta
-        year = today.year
-        while month <= 0:
-            month += 12
-            year -= 1
-        period = str(year) + "-" + str(month)
-
-        for lang in ["BS", "HR"]:
-            url = f"https://bhas.gov.ba/data/Publikacije/Saopstenja/{year}/PRI_01_{year}_{month:02d}_1_{lang}.pdf"
-            try:
-                r = requests.get(url, headers=HEADERS, timeout=20)
-                if r.status_code != 200 or len(r.content) < 3000:
-                    continue
-                with pdfplumber.open(BytesIO(r.content)) as pdf:
-                    text = ""
-                    for page in pdf.pages[:2]:
-                        t = page.extract_text()
-                        if t: text += t + "\n"
-                if not text: continue
-
-                for line in text.split("\n"):
-                    if any(kw in line.upper() for kw in ["UKUPNO", "TOTAL", "CPI", "INDEKS"]):
-                        nums = re2.findall(r"-?\d+\.\d+", line)
-                        if len(nums) >= 2:
-                            try:
-                                vals = [float(n) for n in nums]
-                                idx_c = [v for v in vals if 90 <= v <= 200]
-                                yoy_c = [v for v in vals if -10 <= v <= 30]
-                                if idx_c or yoy_c:
-                                    cpi_data[period] = {
-                                        "index": idx_c[0] if idx_c else None,
-                                        "yoy": yoy_c[-1] if yoy_c else None,
-                                    }
-                                    print(f"  OK {period} ({lang}): idx={idx_c[0] if idx_c else '-'}, yoy={yoy_c[-1] if yoy_c else '-'}")
-                                    break
-                            except:
-                                pass
-                if period in cpi_data:
-                    break
-            except Exception:
-                pass
-
-    if not cpi_data:
-        print("  Nema CPI podataka")
-        path = os.path.join(DATA_DIR, "cpi.json")
-        if not os.path.exists(path):
-            save_json("cpi.json", {"source":"BHAS","error":"PDF nije dostupan","updated":datetime.now().isoformat()[:10],"data":{}})
-        return False
-
-    sorted_p = sort_periods(list(cpi_data.keys()))
-    save_json("cpi.json", {
-        "source": "BHAS PRI_01",
-        "name": "Indeks potrosackih cijena (CPI) BiH",
-        "updated": datetime.now().isoformat()[:10],
-        "note": "Parsiran iz PDF saopstenja, baza 2015=100",
-        "periods": sorted_p,
-        "data": {p: cpi_data[p] for p in sorted_p}
-    })
-    return True
-
-def fetch_uino_porezi():
-    """
-    Preuzima UINO Excel s prihodima od indirektnih poreza 2004-2026.
-    URL: https://www.uino.gov.ba/portal/wp-content/uploads/10-STATISTIKA/1-Prihodi/Prihodi-UKUPNO-2004-2026-objedinjeni.xlsx
-    """
-    print("-> Indirektni porezi BiH (UINO)...")
-    url = "https://www.uino.gov.ba/portal/wp-content/uploads/10-STATISTIKA/1-Prihodi/Prihodi-UKUPNO-2004-2026-objedinjeni.xlsx"
-    
-    # UINO headers
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://www.uino.gov.ba/portal/bs/statistika/',
-        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
-    }
-    
-    try:
-        r = requests.get(url, headers=headers, timeout=30)
-        r.raise_for_status()
-        
-        if len(r.content) < 2000:
-            raise ValueError(f"Premali fajl: {len(r.content)} bytes")
-        
-        wb = openpyxl.load_workbook(BytesIO(r.content), data_only=True)
-        print(f"  Sheetovi: {wb.sheetnames}")
-        
-        all_data = {}
-        for sname in wb.sheetnames[:4]:
-            ws = wb[sname]
-            parsed = parse_sheet(ws)
-            if parsed:
-                compact = compact_series(parsed, n_periods=240, max_series=30)
-                all_data[sname] = compact
-                first = next(iter(compact.values()))
-                print(f"  OK '{sname}': {len(compact)} serija, {len(first)} perioda")
-        
-        if not all_data:
-            raise ValueError("Nema podataka")
-        
-        save_json("uino_porezi.json", {
-            "source": "UINO BiH",
-            "name": "Prihodi od indirektnih poreza BiH 2004-2026",
-            "url": url,
-            "updated": datetime.now().isoformat()[:10],
-            "note": "PDV, akcize, carine, putarine",
-            "sheets": all_data
-        })
-        return True
-        
-    except Exception as e:
-        print(f"  X UINO: {e}")
-        path = os.path.join(DATA_DIR, "uino_porezi.json")
-        if not os.path.exists(path):
-            save_json("uino_porezi.json", {
-                "source": "UINO BiH", "error": str(e),
-                "updated": datetime.now().isoformat()[:10], "sheets": {}
-            })
-        return False
-
-
-
-def fetch_pufbih_direktni():
-    """
-    Parsira PUFBiH saopstenja za direktne poreze FBiH.
-    Kratki timeout da ne blokira pipeline.
-    """
-    print("-> Direktni porezi FBiH (PUFBiH)...")
-    from datetime import date
-    import re as re2
-    today = date.today()
     results = {}
+    results['maloprodaja'] = fetch_standard('maloprodaja', 'Indeksi prometa trgovine na malo',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/STS_01.xlsx'], [0, 1], 'maloprodaja.json')
+    print()
+    results['turizam'] = fetch_standard('turizam', 'Turizam',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/TUR_01.xlsx'], [0, 1, 2], 'turizam.json')
+    print()
+    results['industrija'] = fetch_standard('industrija', 'Ind. proizvodnja',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/IND_01.xlsx'], [0, 1], 'industrija.json')
+    print()
+    results['vanjska_trgovina'] = fetch_vanjska_trgovina()
+    print()
+    results['vt_detalji'] = fetch_etr_detalji()
+    print()
+    results['cpi'] = fetch_cpi_pdf()
+    print()
+    results['bdp'] = fetch_standard('bdp', 'BDP',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_01.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_02.xlsx'], [0, 1], 'bdp.json')
+    print()
+    results['place'] = fetch_place_neto_bruto()
+    print()
+    results['zaposlenost'] = fetch_standard('zaposlenost', 'Zaposleni i trziste rada (ARS)',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_04.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_06.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],
+        [0, 1, 2, 3], 'zaposlenost.json')
+    print()
+    results['nezaposlenost'] = fetch_standard('nezaposlenost', 'Stopa nezaposlenosti (ARS)',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_05.xlsx',
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_01.xlsx'], [0, 1, 2], 'nezaposlenost.json')
+    print()
+    results['uino_porezi'] = fetch_uino_porezi()
+    print()
+    results['vozila'] = fetch_vozila()
+    print()
+    results['direktni_porezi'] = fetch_pufbih_direktni()
+    print()
 
-    for delta in range(0, 12):
-        month = today.month - delta
-        year = today.year
-        while month <= 0:
-            month += 12
-            year -= 1
+    print("-> Meta...")
+    update_meta(results)
 
-        period = str(year) + "-" + str(month)
-
-        urls = [
-            f"https://www.pufbih.ba/v1/public/upload/files/Uplate-javnih-prihoda-{month:02d}-{year}.pdf",
-            f"https://www.pufbih.ba/v1/public/upload/files/uplate-javnih-prihoda-{month:02d}-{year}.pdf",
-        ]
-
-        for url in urls:
-            try:
-                r = requests.get(url, headers=HEADERS, timeout=8)
-                if r.status_code != 200 or len(r.content) < 3000:
-                    continue
-
-                with pdfplumber.open(BytesIO(r.content)) as pdf:
-                    text = ""
-                    for page in pdf.pages[:2]:
-                        t = page.extract_text()
-                        if t: text += t + "\n"
-
-                if not text: continue
-
-                entry = {}
-                for line in text.split("\n"):
-                    nums = [n for n in re2.findall(r"[\d,.]+", line) if len(n) > 4]
-                    if not nums: continue
-
-                    if any(k in line.lower() for k in ["dohodak", "fizickih", "fizičkih"]):
-                        for n in nums:
-                            try:
-                                val = float(n.replace(".", "").replace(",", "."))
-                                if 1e7 < val < 2e9: entry["porez_dohodak"] = val; break
-                            except: pass
-
-                    if any(k in line.lower() for k in ["dobit", "pravnih"]):
-                        for n in nums:
-                            try:
-                                val = float(n.replace(".", "").replace(",", "."))
-                                if 1e7 < val < 2e9: entry["porez_dobit"] = val; break
-                            except: pass
-
-                    if any(k in line.lower() for k in ["ukupno", "ukupna"]):
-                        for n in nums:
-                            try:
-                                val = float(n.replace(".", "").replace(",", "."))
-                                if 5e8 < val < 2e10:
-                                    if "ukupno" not in entry or val > entry["ukupno"]:
-                                        entry["ukupno"] = val
-                            except: pass
-
-                if entry:
-                    results[period] = entry
-                    print(f"  OK {period}: {entry}")
-                    break
-
-            except Exception:
-                pass
-
-    if not results:
-        print("  Nema podataka iz PUFBiH")
-        path = os.path.join(DATA_DIR, "direktni_porezi.json")
-        if not os.path.exists(path):
-            save_json("direktni_porezi.json", {
-                "source": "PUFBiH", "error": "PDF nije dostupan",
-                "updated": datetime.now().isoformat()[:10], "data": {}
-            })
-        return False
-
-    sorted_p = sort_periods(list(results.keys()))
-    save_json("direktni_porezi.json", {
-        "source": "PUFBiH",
-        "name": "Direktni porezi i doprinosi FBiH",
-        "updated": datetime.now().isoformat()[:10],
-        "periods": sorted_p,
-        "data": {p: results[p] for p in sorted_p}
-    })
-    return True
+    success = sum(1 for v in results.values() if v)
+    print(f"\n{'='*55}")
+    print(f"Zavrseno: {success}/{len(results)} uspjesno")
+    for key, ok in results.items():
+        print(f"  {'OK' if ok else 'X '} {key}")
+    print(f"{'='*55}\n")
