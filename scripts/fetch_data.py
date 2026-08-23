@@ -367,7 +367,7 @@ def fetch_vozila():
     today = date.today()
     results = {}
 
-    for delta in range(0, 36):
+    for delta in range(0, 48):
         month = today.month - delta
         year = today.year
         while month <= 0:
@@ -380,31 +380,68 @@ def fetch_vozila():
             try:
                 r = requests.get(url, headers=HEADERS, timeout=12)
                 if r.status_code != 200 or len(r.content) < 3000: continue
+
                 with pdfplumber.open(BytesIO(r.content)) as pdf:
-                    text = "".join(p.extract_text() or "" for p in pdf.pages[:2])
+                    text = "".join(p.extract_text() or "" for p in pdf.pages[:3])
+
                 if not text: continue
 
+                # Ispisuj cijeli tekst za debugging prvih 5 perioda
+                if len(results) < 3:
+                    print(f"  PDF {period} tekst (prvih 500 znakova):")
+                    print(f"  {text[:500]}")
+
                 entry = {}
-                for line in text.split("\n"):
-                    nums = re2.findall(r"\d[\d ]{2,8}\d", line)
+                lines = text.split("\n")
+
+                for line in lines:
+                    # Trazi sve brojeve u liniji
+                    # Vozila su tipicno 3000-20000 ukupno registrovanih
+                    nums_raw = re2.findall(r"[\d\.]{3,}", line)
                     vals = []
-                    for n in nums:
+                    for n in nums_raw:
                         try:
-                            v = int(n.replace(" ", ""))
-                            if 100 < v < 200000: vals.append(v)
+                            # Ukloni tocke kao separator tisuca
+                            clean = n.replace(".", "")
+                            v = int(clean)
+                            # Realna vrijednost za registracija vozila u BiH: 3000-20000/mj
+                            if 3000 <= v <= 50000:
+                                vals.append(v)
                         except: pass
+
                     if not vals: continue
                     line_lower = line.lower()
-                    if any(k in line_lower for k in ["ukupno", "total", "ukupan"]):
-                        if not entry.get("ukupno"): entry["ukupno"] = max(vals)
-                    if any(k in line_lower for k in ["putnick", "automobil", "osobn"]):
-                        if not entry.get("putnicki"): entry["putnicki"] = max(vals)
+
+                    # Ukupno BiH
+                    if any(k in line_lower for k in ["bih", "bosna", "ukupno", "total", "ukupan"]):
+                        if not entry.get("ukupno"):
+                            entry["ukupno"] = max(vals)
+
+                # Fallback - ako nije nasao "ukupno", uzmi najveci broj u dokumentu
+                if not entry.get("ukupno"):
+                    all_vals = []
+                    for line in lines:
+                        nums_raw = re2.findall(r"[\d\.]{3,}", line)
+                        for n in nums_raw:
+                            try:
+                                v = int(n.replace(".", ""))
+                                if 3000 <= v <= 50000:
+                                    all_vals.append(v)
+                            except: pass
+                    if all_vals:
+                        entry["ukupno"] = max(all_vals)
 
                 if entry.get("ukupno"):
                     results[period] = entry
-                    print(f"  OK {period} ({lang}): ukupno={entry['ukupno']}, putnicki={entry.get('putnicki','-')}")
+                    print(f"  OK {period} ({lang}): ukupno={entry['ukupno']}")
                     break
-            except Exception: pass
+                else:
+                    if len(results) < 3:
+                        print(f"  Nema valjanih vrijednosti za {period}")
+
+            except Exception as e:
+                if len(results) < 3:
+                    print(f"  Greska {period}: {e}")
 
     if not results:
         print("  Nema podataka iz BHAS TRA_05")
