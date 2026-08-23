@@ -289,17 +289,14 @@ def fetch_cpi_pdf():
 def fetch_place_neto_bruto():
     """
     Parsira BHAS LAB_04 PDF saopstenja za prosjecne place u BiH.
-    LAB_04 = prosjecna neto/bruto placa za SVE zaposlene u BiH.
-    URL: https://bhas.gov.ba/data/Publikacije/Saopstenja/YYYY/LAB_04_YYYY_MM_1_BS.pdf
-    Zadrzava i LAB_01 Excel za podatke po sektorima.
+    Prosjecna neto placa za SVE zaposlene u BiH (1400-2000 KM).
     """
     print("-> Place neto i bruto (BHAS LAB_04 PDF + LAB_01 Excel)...")
     from datetime import date
     import re as re2
     today = date.today()
 
-    # 1. Parsira LAB_04 PDF za prosjecnu placu - svi zaposleni u BiH
-    place_data = {}  # period -> {neto, bruto, yoy_neto}
+    place_data = {}
 
     for delta in range(0, 36):
         month = today.month - delta
@@ -321,33 +318,40 @@ def fetch_place_neto_bruto():
 
                 entry = {}
                 for line in text.split("\n"):
-                    nums = re2.findall(r"\b(\d{3,4})\b", line)
+                    # Trazi 4-cifrene brojeve koji NISU godina (ne 2020-2030)
+                    nums = re2.findall(r"\b(\d{4})\b", line)
                     vals = []
                     for n in nums:
                         try:
                             v = int(n)
-                            # Neto placa u BiH je tipicno 1000-3000 KM
-                            if 700 <= v <= 5000:
+                            # Placa je 1000-3000 KM, nisu godine
+                            if 1000 <= v <= 3000:
+                                vals.append(v)
+                        except: pass
+
+                    # Takodje trazi 3-cifrene (800-999)
+                    nums3 = re2.findall(r"\b([89]\d{2})\b", line)
+                    for n in nums3:
+                        try:
+                            v = int(n)
+                            if 800 <= v <= 999:
                                 vals.append(v)
                         except: pass
 
                     if not vals: continue
                     line_lower = line.lower()
 
-                    # Prosjecna neto placa
-                    if any(k in line_lower for k in ["neto", "net"]):
-                        if not entry.get("neto") and vals:
-                            # Uzmi prvu razumnu vrijednost
+                    if any(k in line_lower for k in ["neto", "net wage", "neto plac"]):
+                        if not entry.get("neto"):
                             for v in sorted(vals):
-                                if 800 <= v <= 3000:
+                                if 1000 <= v <= 2500:
                                     entry["neto"] = v
                                     break
 
-                    # Prosjecna bruto placa
-                    if any(k in line_lower for k in ["bruto", "gross", "brut"]):
-                        if not entry.get("bruto") and vals:
+                    if any(k in line_lower for k in ["bruto", "gross", "bruto plac"]):
+                        if not entry.get("bruto"):
                             for v in sorted(vals):
-                                if 1200 <= v <= 5000:
+                                if 1500 <= v <= 4000:
                                     entry["bruto"] = v
                                     break
 
@@ -358,22 +362,18 @@ def fetch_place_neto_bruto():
 
             except Exception: pass
 
-    # 2. Uzmi i sektorske podatke iz LAB_01 Excel
+    # Sektori iz LAB_01 Excel
     sektori = {}
-    for url in [
-        "https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx",
-    ]:
-        try:
-            xls = fetch_excel(url)
-            wb = openpyxl.load_workbook(xls, data_only=True)
-            for sname in wb.sheetnames[:1]:
-                parsed = parse_sheet(wb[sname])
-                if parsed:
-                    sektori[sname] = compact_series(parsed, n_periods=72)
-                    print(f"  OK Sektori '{sname}': {len(sektori[sname])} serija")
-            break
-        except Exception as e:
-            print(f"  X LAB_01: {e}")
+    try:
+        xls = fetch_excel("https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_01.xlsx")
+        wb = openpyxl.load_workbook(xls, data_only=True)
+        for sname in wb.sheetnames[:1]:
+            parsed = parse_sheet(wb[sname])
+            if parsed:
+                sektori[sname] = compact_series(parsed, n_periods=72)
+                print(f"  OK Sektori '{sname}': {len(sektori[sname])} serija")
+    except Exception as e:
+        print(f"  X LAB_01: {e}")
 
     if not place_data and not sektori:
         path = os.path.join(DATA_DIR, "place.json")
@@ -381,13 +381,12 @@ def fetch_place_neto_bruto():
             save_json("place.json", {"source":"BHAS","error":"Nedostupno","updated":datetime.now().isoformat()[:10],"sheets":{}})
         return False
 
-    # Spremi kombinirano
     sorted_p = sort_periods(list(place_data.keys())) if place_data else []
     save_json("place.json", {
         "source": "BHAS LAB_04/LAB_01",
         "name": "Prosjecne place i place po sektorima BiH",
         "updated": datetime.now().isoformat()[:10],
-        "note": "LAB_04=prosjecna placa svih zaposlenih, LAB_01=placa po sektorima",
+        "note": "LAB_04=prosjecna placa svih zaposlenih BiH, LAB_01=placa po sektorima",
         "periods": sorted_p,
         "place_bih": {p: place_data[p] for p in sorted_p},
         "sheets": sektori
@@ -431,7 +430,10 @@ def fetch_uino_porezi():
 
 
 def fetch_vozila():
-    """Parsira BHAS TRA_05 PDF saopstenja za registraciju vozila BiH."""
+    """
+    Parsira BHAS TRA_05 PDF saopstenja za registraciju vozila BiH.
+    Trazimo broj iz recenice "prvi put registrovano je X motornih vozila"
+    """
     print("-> Registracija vozila BiH (BHAS TRA_05)...")
     from datetime import date
     import re as re2
@@ -453,66 +455,43 @@ def fetch_vozila():
                 if r.status_code != 200 or len(r.content) < 3000: continue
 
                 with pdfplumber.open(BytesIO(r.content)) as pdf:
-                    text = "".join(p.extract_text() or "" for p in pdf.pages[:3])
-
+                    text = "".join(p.extract_text() or "" for p in pdf.pages[:2])
                 if not text: continue
 
-                # Ispisuj cijeli tekst za debugging prvih 5 perioda
-                if len(results) < 3:
-                    print(f"  PDF {period} tekst (prvih 500 znakova):")
-                    print(f"  {text[:500]}")
-
-                entry = {}
-                lines = text.split("\n")
-
-                for line in lines:
-                    # Trazi sve brojeve u liniji
-                    # Vozila su tipicno 3000-20000 ukupno registrovanih
-                    nums_raw = re2.findall(r"[\d\.]{3,}", line)
-                    vals = []
-                    for n in nums_raw:
+                # Trazi specificnu recenicnu: "prvi put registrovano je X motorn"
+                # ili "registrovano je X" ili "registered X motor"
+                ukupno = None
+                patterns = [
+                    r"registrovano je (\d[\d ]+\d) motor",
+                    r"registrovana su (\d[\d ]+\d) motor",
+                    r"registered (\d[\d ]+\d) motor",
+                    r"registrirano je (\d[\d ]+\d) motor",
+                ]
+                for pat in patterns:
+                    m = re2.search(pat, text, re2.IGNORECASE)
+                    if m:
                         try:
-                            # Ukloni tocke kao separator tisuca
-                            clean = n.replace(".", "")
-                            v = int(clean)
-                            # Realna vrijednost za registracija vozila u BiH: 3000-20000/mj
-                            if 3000 <= v <= 50000:
-                                vals.append(v)
+                            ukupno = int(m.group(1).replace(" ", ""))
+                            break
                         except: pass
 
-                    if not vals: continue
-                    line_lower = line.lower()
+                if ukupno and 1000 <= ukupno <= 50000:
+                    # Trazi udio putnickih automobila
+                    putnicki_pct = None
+                    m2 = re2.search(r"putnick[^(]+\((\d+\.\d+)%\)", text)
+                    if m2:
+                        try: putnicki_pct = float(m2.group(1))
+                        except: pass
 
-                    # Ukupno BiH
-                    if any(k in line_lower for k in ["bih", "bosna", "ukupno", "total", "ukupan"]):
-                        if not entry.get("ukupno"):
-                            entry["ukupno"] = max(vals)
-
-                # Fallback - ako nije nasao "ukupno", uzmi najveci broj u dokumentu
-                if not entry.get("ukupno"):
-                    all_vals = []
-                    for line in lines:
-                        nums_raw = re2.findall(r"[\d\.]{3,}", line)
-                        for n in nums_raw:
-                            try:
-                                v = int(n.replace(".", ""))
-                                if 3000 <= v <= 50000:
-                                    all_vals.append(v)
-                            except: pass
-                    if all_vals:
-                        entry["ukupno"] = max(all_vals)
-
-                if entry.get("ukupno"):
-                    results[period] = entry
-                    print(f"  OK {period} ({lang}): ukupno={entry['ukupno']}")
+                    results[period] = {
+                        "ukupno": ukupno,
+                        "putnicki": int(ukupno * putnicki_pct / 100) if putnicki_pct else None,
+                        "putnicki_pct": putnicki_pct
+                    }
+                    print(f"  OK {period} ({lang}): ukupno={ukupno}, putnicki={putnicki_pct}%")
                     break
-                else:
-                    if len(results) < 3:
-                        print(f"  Nema valjanih vrijednosti za {period}")
 
-            except Exception as e:
-                if len(results) < 3:
-                    print(f"  Greska {period}: {e}")
+            except Exception: pass
 
     if not results:
         print("  Nema podataka iz BHAS TRA_05")
