@@ -551,6 +551,127 @@ def fetch_uino_porezi():
         return False
 
 
+
+def fetch_pufbih_direktni():
+    """
+    Parsira PUFBiH saopstenja za direktne poreze FBiH.
+    URL pattern: https://pufbih.ba/v1/public/upload/files/Uplate-javnih-prihoda-{month}-{year}.pdf
+    ili: https://pufbih.ba/index.php/bs/javnost-rada/statistika/javni-prihodi
+    """
+    print("-> Direktni porezi FBiH (PUFBiH)...")
+    from datetime import date
+    import re as re2
+    today = date.today()
+    results = {}
+
+    # PUFBiH URL patterns za saopstenja
+    url_patterns = [
+        "https://www.pufbih.ba/v1/public/upload/files/Uplate-javnih-prihoda-{month:02d}-{year}.pdf",
+        "https://www.pufbih.ba/v1/public/upload/files/uplate-javnih-prihoda-{month:02d}-{year}.pdf",
+        "https://www.pufbih.ba/v1/public/upload/files/javni-prihodi-{month:02d}-{year}.pdf",
+    ]
+
+    for delta in range(0, 24):
+        month = today.month - delta
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+
+        period = str(year) + "-" + str(month)
+
+        for pattern in url_patterns:
+            url = pattern.format(month=month, year=year)
+            try:
+                r = requests.get(url, headers=HEADERS, timeout=20)
+                if r.status_code != 200 or len(r.content) < 3000:
+                    continue
+
+                with pdfplumber.open(BytesIO(r.content)) as pdf:
+                    text = ""
+                    for page in pdf.pages[:3]:
+                        t = page.extract_text()
+                        if t: text += t + "\n"
+
+                if not text: continue
+
+                # Trazi kljucne podatke
+                entry = {}
+                lines = text.split("\n")
+
+                for line in lines:
+                    nums = re2.findall(r"[\d,.]+", line)
+                    if not nums: continue
+
+                    # Porez na dohodak
+                    if any(kw in line for kw in ["dohodak", "fizickih lica", "fizičkih"]):
+                        for n in nums:
+                            try:
+                                val = float(n.replace(".", "").replace(",", "."))
+                                if 10_000_000 < val < 2_000_000_000:
+                                    entry["porez_dohodak"] = val
+                                    break
+                            except: pass
+
+                    # Porez na dobit
+                    if any(kw in line for kw in ["dobit", "pravnih lica"]):
+                        for n in nums:
+                            try:
+                                val = float(n.replace(".", "").replace(",", "."))
+                                if 10_000_000 < val < 2_000_000_000:
+                                    entry["porez_dobit"] = val
+                                    break
+                            except: pass
+
+                    # Doprinosi
+                    if any(kw in line for kw in ["doprinosi", "penzijsko", "zdravstveno"]):
+                        for n in nums:
+                            try:
+                                val = float(n.replace(".", "").replace(",", "."))
+                                if 100_000_000 < val < 10_000_000_000:
+                                    entry["doprinosi"] = val
+                                    break
+                            except: pass
+
+                    # Ukupno
+                    if any(kw in line.lower() for kw in ["ukupno", "ukupna naplata", "javnih prihoda"]):
+                        for n in nums:
+                            try:
+                                val = float(n.replace(".", "").replace(",", "."))
+                                if 500_000_000 < val < 20_000_000_000:
+                                    if "ukupno" not in entry or val > entry["ukupno"]:
+                                        entry["ukupno"] = val
+                            except: pass
+
+                if entry:
+                    results[period] = entry
+                    print(f"  OK {period}: dohodak={entry.get('porez_dohodak',0)/1e6:.0f}M, dobit={entry.get('porez_dobit',0)/1e6:.0f}M, ukupno={entry.get('ukupno',0)/1e6:.0f}M")
+                    break
+
+            except Exception as e:
+                pass
+
+    if not results:
+        print("  Nema podataka iz PUFBiH saopstenja")
+        path = os.path.join(DATA_DIR, "direktni_porezi.json")
+        if not os.path.exists(path):
+            save_json("direktni_porezi.json", {
+                "source": "PUFBiH", "error": "PDF nije dostupan",
+                "updated": datetime.now().isoformat()[:10], "data": {}
+            })
+        return False
+
+    sorted_p = sort_periods(list(results.keys()))
+    save_json("direktni_porezi.json", {
+        "source": "PUFBiH",
+        "name": "Direktni porezi i doprinosi FBiH",
+        "updated": datetime.now().isoformat()[:10],
+        "note": "Porez na dohodak, dobit, doprinosi (kumulativni YTD)",
+        "periods": sorted_p,
+        "data": {p: results[p] for p in sorted_p}
+    })
+    return True
+
 if __name__ == '__main__':
     print(f"\n{'='*55}")
     print(f"Makro BiH - Osvjezavanje podataka")
@@ -598,6 +719,8 @@ if __name__ == '__main__':
     print()
 
     results["uino_porezi"] = fetch_uino_porezi()
+    print()
+    results["direktni_porezi"] = fetch_pufbih_direktni()
     print()
     print("-> Meta...")
     update_meta(results)
