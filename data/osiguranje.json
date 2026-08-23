@@ -1,0 +1,131 @@
+{
+  "source": "AZOBiH",
+  "name": "Tržište osiguranja BiH",
+  "url": "https://www.azobih.gov.ba/statistika/default.aspx?id=4349",
+  "updated": "2025-08-01",
+  "note": "Godišnji podaci, ručno uneseni iz AZOBiH biltena",
+  "data": {
+    "2020": {
+      "premija_ukupno": 755894108,
+      "premija_nezivot": 599508443,
+      "premija_zivot": 156385665,
+      "stete_isplacene": 398437205,
+      "prihod": 821660587,
+      "dobit": 72149236,
+      "kapital": 488333090,
+      "ao_premija": 386381198,
+      "kasko_premija": 72014676,
+      "premija_eur_mil": 386.7,
+      "udio_bdp_pct": null,
+      "per_capita_eur": null
+    },
+    "2021": {
+      "premija_ukupno": 818406451,
+      "premija_nezivot": 643611777,
+      "premija_zivot": 174794674,
+      "stete_isplacene": null,
+      "prihod": 877418432,
+      "dobit": 74963158,
+      "kapital": 516233479,
+      "ao_premija": 408838588,
+      "kasko_premija": 79643162,
+      "premija_eur_mil": 418.0,
+      "udio_bdp_pct": 2.09,
+      "per_capita_eur": 120
+    },
+    "2022": {
+      "premija_ukupno": 881056961,
+      "premija_nezivot": 692811741,
+      "premija_zivot": 188245219,
+      "stete_isplacene": 398628210,
+      "prihod": 948688515,
+      "dobit": 70274651,
+      "kapital": 529312917,
+      "ao_premija": 426951701,
+      "kasko_premija": 89784827,
+      "premija_eur_mil": 450.0,
+      "udio_bdp_pct": 1.94,
+      "per_capita_eur": 130
+    },
+    "2023": {
+      "premija_ukupno": 984030974,
+      "premija_nezivot": 784526426,
+      "premija_zivot": 199504548,
+      "stete_isplacene": 429360785,
+      "prihod": 1054539768,
+      "dobit": 79964769,
+      "kapital": 564721757,
+      "ao_premija": 480785034,
+      "kasko_premija": 106191984,
+      "premija_eur_mil": 503.0,
+      "udio_bdp_pct": 2.03,
+      "per_capita_eur": 145
+    },
+    "2024": {
+      "premija_ukupno": 1085511270,
+      "premija_nezivot": 877704677,
+      "premija_zivot": 207806593,
+      "stete_isplacene": 470606321,
+      "prihod": 1140027830,
+      "dobit": 89715419,
+      "kapital": 617735754,
+      "ao_premija": 536481550,
+      "kasko_premija": 121675849,
+      "premija_eur_mil": 555.0,
+      "udio_bdp_pct": 2.11,
+      "per_capita_eur": 161
+    }
+  },
+  "top_drustva_2024": [
+    {
+      "naziv": "ASA Central",
+      "premija": 127467959,
+      "rang": 1
+    },
+    {
+      "naziv": "Adriatic",
+      "premija": 108760408,
+      "rang": 2
+    },
+    {
+      "naziv": "Euroherc",
+      "premija": 88551887,
+      "rang": 3
+    },
+    {
+      "naziv": "Uniqa",
+      "premija": 83955161,
+      "rang": 4
+    },
+    {
+      "naziv": "Triglav FBiH",
+      "premija": 79858272,
+      "rang": 5
+    },
+    {
+      "naziv": "Sarajevo",
+      "premija": 75738825,
+      "rang": 6
+    },
+    {
+      "naziv": "Grawe FBiH",
+      "premija": 61004550,
+      "rang": 7
+    },
+    {
+      "naziv": "Croatia",
+      "premija": 52046674,
+      "rang": 8
+    },
+    {
+      "naziv": "Wiener",
+      "premija": 46965928,
+      "rang": 9
+    },
+    {
+      "naziv": "Vienna",
+      "premija": 46336212,
+      "rang": 10
+    }
+  ]
+}
