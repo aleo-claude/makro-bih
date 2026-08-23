@@ -554,6 +554,33 @@ input[type="text"] { width: 200px; }
   </div>
 
   <div class="sidebar-section">
+    <div class="sidebar-section-label">Porezi</div>
+    <div class="nav-item" onclick="navTo('uino_porezi', this)" data-page="uino_porezi">
+      <span class="nav-icon">🏦</span>
+      Indirektni porezi
+      <span class="nav-badge">UINO</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Financije</div>
+    <div class="nav-item" onclick="navTo('osiguranje', this)" data-page="osiguranje">
+      <span class="nav-icon">🛡️</span>
+      Tržište osiguranja
+      <span class="nav-badge">AZOBiH</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Promet i vozila</div>
+    <div class="nav-item" onclick="navTo('vozila', this)" data-page="vozila">
+      <span class="nav-icon">🚗</span>
+      Registracija vozila
+      <span class="nav-badge">BHAS</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
     <div class="sidebar-section-label">Cijene</div>
     <div class="nav-item" onclick="navTo('cpi', this)" data-page="cpi">
       <span class="nav-icon">📈</span>
@@ -1094,6 +1121,107 @@ input[type="text"] { width: 200px; }
     <div id="cpi-status" class="note">Učitavam podatke...</div>
   </div>
 
+
+  <!-- UINO POREZI -->
+  <div id="page-uino_porezi" class="section-page">
+    <div class="page-header">
+      <h2>Indirektni porezi BiH</h2>
+      <p>PDV, akcize, carine, putarina · Izvor: <a href="https://www.uino.gov.ba/portal/bs/statistika/" target="_blank">UINO BiH</a> · Godišnji podaci 2006–2025</p>
+    </div>
+    <div id="uino-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header">
+          <h3>Ukupni prihodi od indirektnih poreza</h3>
+        </div>
+        <p>Godišnji prihodi u mlrd KM · PDV + Akcize + Carine + Putarina</p>
+        <div class="chart-wrap tall"><canvas id="chartUinoUkupno"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Struktura prihoda 2025.</h3></div>
+        <p>Udio po vrsti poreza</p>
+        <div class="chart-wrap"><canvas id="chartUinoPie"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY rast ukupnih prihoda</h3></div>
+        <p>Godišnja stopa promjene (%)</p>
+        <div class="chart-wrap"><canvas id="chartUinoYoY"></canvas></div>
+      </div>
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>PDV vs Akcize vs Carine — trend</h3></div>
+        <p>Komponente indirektnih poreza u mlrd KM</p>
+        <div class="chart-wrap"><canvas id="chartUinoKomponente"></canvas></div>
+      </div>
+    </div>
+    <div id="uino-status" class="note">Učitavam podatke...</div>
+  </div>
+
+
+  <!-- VOZILA -->
+  <div id="page-vozila" class="section-page">
+    <div class="page-header">
+      <h2>Registracija motornih vozila BiH</h2>
+      <p>Prva registracija vozila po mjesecu · Izvor: <a href="https://bhas.gov.ba/Calendar/Category/29" target="_blank">BHAS TRA_05</a> · Automatski osvježava svaki dan</p>
+    </div>
+    <div id="vozila-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Ukupna registracija vozila — trend</h3></div>
+        <p>Broj novih registracija po mjesecu</p>
+        <div class="chart-wrap tall"><canvas id="chartVozilaMain"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Sezonalnost</h3></div>
+        <p>Prosječna registracija po mjesecu</p>
+        <div class="chart-wrap"><canvas id="chartVozilaSezona"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>YoY rast</h3></div>
+        <p>Godišnja stopa promjene (%)</p>
+        <div class="chart-wrap"><canvas id="chartVozilaYoY"></canvas></div>
+      </div>
+    </div>
+    <div id="vozila-status" class="note">Učitavam podatke...</div>
+  </div>
+
+
+  <!-- OSIGURANJE -->
+  <div id="page-osiguranje" class="section-page">
+    <div class="page-header">
+      <h2>Tržište osiguranja BiH</h2>
+      <p>Premija, štete, dobit i kapital · Izvor: <a href="https://www.azobih.gov.ba/statistika/default.aspx?id=4349" target="_blank">AZOBiH godišnji bilteni</a> · Godišnji podaci 2020–2024</p>
+    </div>
+    <div id="osig-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Ukupna premija — trend</h3></div>
+        <p>Bruto zaračunata premija u mlrd KM · životno vs neživotno</p>
+        <div class="chart-wrap tall"><canvas id="chartOsigPremija"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Struktura premije 2024.</h3></div>
+        <p>AO, kasko, životno i ostale vrste osiguranja</p>
+        <div class="chart-wrap"><canvas id="chartOsigStruktura"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Top 10 osiguravača 2024.</h3></div>
+        <p>Premija po društvu (mlrd KM)</p>
+        <div class="chart-wrap tall"><canvas id="chartOsigTop10"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Štete, dobit i kapital</h3></div>
+        <p>Ključni financijski pokazatelji sektora</p>
+        <div class="chart-wrap"><canvas id="chartOsigFinancije"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>Omjer šteta/premija (%)</h3></div>
+        <p>Combined ratio — udio isplaćenih šteta u premiji</p>
+        <div class="chart-wrap"><canvas id="chartOsigRatio"></canvas></div>
+      </div>
+    </div>
+    <div id="osig-status" class="note">Učitavam podatke...</div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -1106,6 +1234,9 @@ const PAGE_TITLES = {
   turizam: 'Turizam i noćenja',
   trziste_rada: 'Tržište rada',
   cpi: 'Inflacija (CPI)',
+  uino_porezi: 'Indirektni porezi BiH',
+  vozila: 'Registracija vozila',
+  osiguranje: 'Tržište osiguranja BiH',
 };
 
 function navTo(pageId, el) {
@@ -1129,6 +1260,9 @@ function navTo(pageId, el) {
   else if (pageId === 'place') initPlace();
   else if (pageId === 'trziste_rada') initTrzisteRada();
   else if (pageId === 'cpi') initCpi();
+  else if (pageId === 'uino_porezi') initUinoPorezi();
+  else if (pageId === 'vozila') initVozila();
+  else if (pageId === 'osiguranje') initOsiguranje();
   else if (pageId === 'turizam') initTurizam();
 }
 
@@ -2947,6 +3081,408 @@ async function initCpi() {
 
   } catch(e) {
     document.getElementById('cpi-status').textContent = 'Greska: ' + e.message;
+    console.error(e);
+  }
+}
+
+
+// UINO INDIREKTNI POREZI
+let uinoInited = false;
+
+async function initUinoPorezi() {
+  if (uinoInited) return;
+  uinoInited = true;
+  const st = document.getElementById('uino-status');
+  try {
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'uino_porezi.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (!data.sheets || !Object.keys(data.sheets).length) {
+      st.textContent = 'Nema podataka.'; return;
+    }
+
+    const sheet = Object.values(data.sheets)[0];
+    const ukupno = sheet['UKUPNO'] || {};
+    const pdv = sheet['Porez na dodanu vrijednost'] || {};
+    const akcize = sheet['Akciza na uvozne proizvode'] || {};
+    const putarina = sheet['Posebna taksa (putarina) na naftne derivate'] || {};
+    const carine = sheet['Carinske dažbine, naknade za carinsko evidentiranje i posebne dažbine'] || {};
+    const akcizeDom = sheet['Akciza na domaće proizvode'] || {};
+
+    const years = Object.keys(ukupno).sort();
+    const lastYr = years[years.length-1];
+    const prevYr = years[years.length-2];
+
+    const lastUk = ukupno[lastYr] || 0;
+    const prevUk = ukupno[prevYr] || 0;
+    const yoy = prevUk ? ((lastUk/prevUk)-1)*100 : null;
+    const lastPdv = pdv[lastYr] || 0;
+    const pdvUdio = lastUk ? (lastPdv/lastUk*100) : null;
+
+    // KPI
+    makeKPI('uino-kpi', [
+      { label: 'Ukupno ' + lastYr, value: (lastUk/1e9).toFixed(2)+' mlrd KM',
+        change: yoy != null ? (yoy>0?'+':'')+yoy.toFixed(1)+'% vs '+prevYr : '', changeClass: yoy > 0 ? 'pos' : 'neg' },
+      { label: 'PDV ' + lastYr, value: (lastPdv/1e9).toFixed(2)+' mlrd KM',
+        change: pdvUdio ? pdvUdio.toFixed(0)+'% ukupnih prihoda' : '', changeClass: 'neu' },
+      { label: 'Akcize+putarina', value: ((akcize[lastYr]||0)+(putarina[lastYr]||0)+(akcizeDom[lastYr]||0))/1e9 > 0 ? (((akcize[lastYr]||0)+(putarina[lastYr]||0)+(akcizeDom[lastYr]||0))/1e9).toFixed(2)+' mlrd' : '-', changeClass: 'neu' },
+      { label: 'Rast 2006→'+lastYr, value: ukupno['2006'] ? '+'+(((lastUk/ukupno['2006'])-1)*100).toFixed(0)+'%' : '-',
+        change: (ukupno['2006']/1e9).toFixed(1)+' → '+(lastUk/1e9).toFixed(1)+' mlrd', changeClass: 'pos' },
+    ]);
+
+    st.innerHTML = 'Izvor: <a href="https://www.uino.gov.ba/portal/bs/statistika/" target="_blank">UINO BiH — Prihodi UKUPNO 2004-2026</a> · Azurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
+
+    // Stacked bar - ukupno po godinama
+    new Chart(document.getElementById('chartUinoUkupno'), {
+      type: 'bar',
+      data: {
+        labels: years,
+        datasets: [
+          { label: 'PDV', data: years.map(y => +(( pdv[y]||0)/1e9).toFixed(2)), backgroundColor: 'rgba(37,99,235,0.85)', borderRadius: 2 },
+          { label: 'Akcize (uvoz)', data: years.map(y => +((akcize[y]||0)/1e9).toFixed(2)), backgroundColor: 'rgba(5,150,105,0.75)', borderRadius: 2 },
+          { label: 'Akcize (domaće)', data: years.map(y => +((akcizeDom[y]||0)/1e9).toFixed(2)), backgroundColor: 'rgba(5,150,105,0.45)', borderRadius: 2 },
+          { label: 'Putarina', data: years.map(y => +((putarina[y]||0)/1e9).toFixed(2)), backgroundColor: 'rgba(217,119,6,0.75)', borderRadius: 2 },
+          { label: 'Carine', data: years.map(y => +((carine[y]||0)/1e9).toFixed(2)), backgroundColor: 'rgba(124,58,237,0.65)', borderRadius: 2 },
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: { ...chartDefaults.plugins,
+          tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(2)+' mlrd KM' } }
+        },
+        scales: { ...chartDefaults.scales,
+          x: { ...chartDefaults.scales.x, stacked: true },
+          y: { ...chartDefaults.scales.y, stacked: true, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+' mlrd' } }
+        }
+      }
+    });
+
+    // Pie - struktura zadnje godine
+    const pieData = [
+      { label: 'PDV', val: pdv[lastYr]||0, color: 'rgba(37,99,235,0.85)' },
+      { label: 'Akcize uvoz', val: akcize[lastYr]||0, color: 'rgba(5,150,105,0.85)' },
+      { label: 'Akcize dom.', val: akcizeDom[lastYr]||0, color: 'rgba(5,150,105,0.5)' },
+      { label: 'Putarina', val: putarina[lastYr]||0, color: 'rgba(217,119,6,0.85)' },
+      { label: 'Carine', val: carine[lastYr]||0, color: 'rgba(124,58,237,0.75)' },
+    ].filter(d => d.val > 0);
+
+    new Chart(document.getElementById('chartUinoPie'), {
+      type: 'doughnut',
+      data: {
+        labels: pieData.map(d => d.label),
+        datasets: [{ data: pieData.map(d => +(d.val/1e9).toFixed(2)), backgroundColor: pieData.map(d => d.color) }]
+      },
+      options: {
+        plugins: { legend: { position: 'right', labels: { color: '#374151', font: { family: "'Source Sans 3'", size: 11 }, boxWidth: 12, padding: 8 } },
+          tooltip: { callbacks: { label: ctx => ' '+ctx.label+': '+ctx.parsed?.toFixed(2)+' mlrd KM' } }
+        }
+      }
+    });
+
+    // YoY
+    const yoyArr = years.map((yr, i) => {
+      if (i === 0) return null;
+      const curr = ukupno[yr], prev = ukupno[years[i-1]];
+      return (curr && prev) ? +((curr/prev-1)*100).toFixed(2) : null;
+    });
+
+    new Chart(document.getElementById('chartUinoYoY'), {
+      type: 'bar',
+      data: { labels: years, datasets: [{ label: 'YoY %', data: yoyArr,
+        backgroundColor: yoyArr.map(v => v >= 0 ? 'rgba(5,150,105,0.7)' : 'rgba(220,38,38,0.7)'),
+        borderRadius: 3 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+(ctx.parsed.y>0?'+':'')+ctx.parsed.y?.toFixed(1)+'%' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
+      }
+    });
+
+    // Komponente trend - line
+    new Chart(document.getElementById('chartUinoKomponente'), {
+      type: 'line',
+      data: { labels: years, datasets: [
+        { label: 'PDV', data: years.map(y => +((pdv[y]||0)/1e9).toFixed(2)), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+        { label: 'Akcize (uvoz+dom.)', data: years.map(y => +(((akcize[y]||0)+(akcizeDom[y]||0))/1e9).toFixed(2)), borderColor: '#059669', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 3 },
+        { label: 'Putarina', data: years.map(y => +((putarina[y]||0)/1e9).toFixed(2)), borderColor: '#d97706', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 3 },
+        { label: 'Carine', data: years.map(y => +((carine[y]||0)/1e9).toFixed(2)), borderColor: '#7c3aed', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 3 },
+      ]},
+      options: { ...chartDefaults,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(2)+' mlrd KM' } } },
+        scales: { ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+' mlrd' } }
+        }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('uino-status').textContent = 'Greska: ' + e.message;
+    console.error(e);
+  }
+}
+
+
+// VOZILA
+let vozilaInited = false;
+const MTHS_V = ['','Sij','Velj','Ozu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
+
+async function initVozila() {
+  if (vozilaInited) return;
+  vozilaInited = true;
+  const st = document.getElementById('vozila-status');
+  try {
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'vozila.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (!data.data || !data.periods || !data.periods.length) {
+      st.textContent = 'Nema podataka.'; return;
+    }
+
+    // Re-sortiraj periode da budemo sigurni
+    const periods = (data.periods || Object.keys(data.data)).slice().sort((a,b) => {
+      const n = s => { const pts = s.split('-'); return pts[0]+'-'+(pts[1]||'0').padStart(2,'0'); };
+      return n(a).localeCompare(n(b));
+    });
+    const d = data.data;
+    // Numerički format MM/YY za vozila (izbjegava vizualnu zbrku s nazivima mjeseci)
+    const labels = periods.map(p => {
+      const pts = p.split('-');
+      return (pts[1]||'?').padStart(2,'0') + '/' + pts[0].slice(2);
+    });
+
+    // Ukupno - filtriraj nevaljane vrijednosti
+    const ukupnoVals = periods.map(p => {
+      const v = d[p]?.ukupno;
+      // Odbaci vrijednosti koje izgledaju kao godina (2020-2030)
+      return (v && v > 500 && v < 100000) ? v : null;
+    });
+
+    const lastP = periods[periods.length-1];
+    const lastUk = ukupnoVals[ukupnoVals.length-1];
+
+    // YoY
+    const yoyArr = periods.map((p, i) => {
+      const [yr, mo] = p.split('-');
+      const prevP = (parseInt(yr)-1)+'-'+mo;
+      const prevIdx = periods.indexOf(prevP);
+      if (prevIdx < 0 || !ukupnoVals[i] || !ukupnoVals[prevIdx]) return null;
+      return +((ukupnoVals[i]/ukupnoVals[prevIdx]-1)*100).toFixed(2);
+    });
+    const lastYoY = yoyArr[yoyArr.length-1];
+
+    // Prosjek zadnjih 12M
+    const last12 = ukupnoVals.slice(-12).filter(v => v != null);
+    const avg12 = last12.length ? Math.round(last12.reduce((a,b)=>a+b,0)/last12.length) : null;
+
+    // Godišnji zbroj
+    const byYear = {};
+    periods.forEach((p, i) => {
+      const yr = p.split('-')[0];
+      if (ukupnoVals[i]) byYear[yr] = (byYear[yr]||0) + ukupnoVals[i];
+    });
+    const lastFullYr = Object.keys(byYear).sort().slice(-2)[0];
+    const annualTotal = byYear[lastFullYr];
+
+    makeKPI('vozila-kpi', [
+      { label: 'Registracija '+periodToLabel(lastP), value: lastUk ? lastUk.toLocaleString() : '-', change: 'vozila', changeClass: 'neu' },
+      { label: 'YoY', value: lastYoY != null ? (lastYoY>0?'+':'')+lastYoY.toFixed(1)+'%' : '-', changeClass: lastYoY > 0 ? 'pos' : 'neg' },
+      { label: 'Prosjek 12M', value: avg12 ? avg12.toLocaleString() : '-', change: 'vozila/mj.', changeClass: 'neu' },
+      { label: lastFullYr+' ukupno', value: annualTotal ? annualTotal.toLocaleString() : '-', change: 'prvih registracija', changeClass: 'neu' },
+    ]);
+
+    st.innerHTML = 'Izvor: <a href="https://bhas.gov.ba/Calendar/Category/29" target="_blank">BHAS TRA_05</a> · Prva registracija motornih vozila · Azurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
+
+    // Glavni chart
+    new Chart(document.getElementById('chartVozilaMain'), {
+      type: 'line',
+      data: { labels, datasets: [{
+        label: 'Registrirana vozila', data: ukupnoVals,
+        borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.08)',
+        fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 2,
+      }]},
+      options: { ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.y?.toLocaleString()+' vozila' } }
+        },
+        scales: { ...chartDefaults.scales,
+          y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toLocaleString() } }
+        }
+      }
+    });
+
+    // Sezonalnost
+    const mData = Array(12).fill(0).map(() => ({ s: 0, n: 0 }));
+    periods.forEach((p, i) => {
+      const [yr, mo] = p.split('-');
+      const v = ukupnoVals[i];
+      if (v && mo) { const m = parseInt(mo)-1; if (m>=0 && m<12) { mData[m].s += v; mData[m].n++; } }
+    });
+    const mAvg = mData.map(d => d.n ? Math.round(d.s/d.n) : null);
+
+    new Chart(document.getElementById('chartVozilaSezona'), {
+      type: 'bar',
+      data: { labels: MTHS_V.slice(1), datasets: [{ label: 'Prosjek', data: mAvg,
+        backgroundColor: mAvg.map(v => v > 2500 ? 'rgba(21,128,61,0.8)' : 'rgba(26,86,219,0.6)'),
+        borderRadius: 4 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.y?.toLocaleString()+' vozila' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toLocaleString() } } }
+      }
+    });
+
+    // YoY chart
+    new Chart(document.getElementById('chartVozilaYoY'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'YoY %', data: yoyArr,
+        backgroundColor: yoyArr.map(v => v >= 0 ? 'rgba(21,128,61,0.7)' : 'rgba(220,38,38,0.7)'),
+        borderRadius: 3 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+(ctx.parsed.y>0?'+':'')+ctx.parsed.y?.toFixed(1)+'%' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('vozila-status').textContent = 'Greska: ' + e.message;
+    console.error(e);
+  }
+}
+
+
+// OSIGURANJE
+let osigInited = false;
+
+async function initOsiguranje() {
+  if (osigInited) return;
+  osigInited = true;
+  const st = document.getElementById('osig-status');
+  try {
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'osiguranje.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    const d = data.data;
+    const years = Object.keys(d).sort();
+    const lastYr = years[years.length-1];
+    const prevYr = years[years.length-2];
+    const last = d[lastYr];
+    const prev = d[prevYr];
+
+    const yoyPremija = prev ? ((last.premija_ukupno/prev.premija_ukupno)-1)*100 : null;
+    const omjerSteta = last.stete_isplacene ? (last.stete_isplacene/last.premija_ukupno*100) : null;
+    const zivotUdio = (last.premija_zivot/last.premija_ukupno*100);
+
+    makeKPI('osig-kpi', [
+      { label: 'Ukupna premija '+lastYr, value: (last.premija_ukupno/1e9).toFixed(3)+' mlrd KM',
+        change: yoyPremija ? (yoyPremija>0?'+':'')+yoyPremija.toFixed(1)+'% vs '+prevYr : '', changeClass: 'pos' },
+      { label: 'Isplaćene štete', value: last.stete_isplacene ? (last.stete_isplacene/1e9).toFixed(3)+' mlrd KM' : '-',
+        change: omjerSteta ? omjerSteta.toFixed(1)+'% od premije' : '', changeClass: 'neu' },
+      { label: 'Dobit sektora', value: last.dobit ? (last.dobit/1e6).toFixed(1)+' mil KM' : '-',
+        change: 'ROE: '+(last.dobit/last.kapital*100).toFixed(1)+'%', changeClass: 'pos' },
+      { label: 'Životno osiguranje', value: zivotUdio.toFixed(1)+'%',
+        change: (last.premija_zivot/1e6).toFixed(0)+' mil KM premija', changeClass: 'neu' },
+    ]);
+
+    st.innerHTML = 'Izvor: <a href="https://www.azobih.gov.ba/statistika/default.aspx?id=4349" target="_blank">AZOBiH Godišnji bilteni 2020-2024</a> · Ažurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
+
+    // Stacked bar - premija nezivot + zivot
+    new Chart(document.getElementById('chartOsigPremija'), {
+      type: 'bar',
+      data: {
+        labels: years,
+        datasets: [
+          { label: 'Neživotno', data: years.map(y => +(d[y].premija_nezivot/1e9).toFixed(3)), backgroundColor: 'rgba(26,86,219,0.8)', borderRadius: 3 },
+          { label: 'Životno', data: years.map(y => +(d[y].premija_zivot/1e9).toFixed(3)), backgroundColor: 'rgba(5,150,105,0.75)', borderRadius: 3 },
+        ]
+      },
+      options: { ...chartDefaults,
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(3)+' mlrd KM' } } },
+        scales: { ...chartDefaults.scales,
+          x: { ...chartDefaults.scales.x, stacked: true },
+          y: { ...chartDefaults.scales.y, stacked: true, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(2)+' mlrd' } }
+        }
+      }
+    });
+
+    // Doughnut - struktura premije 2024
+    const last2024 = d[lastYr];
+    const ostaloNezivot = last2024.premija_nezivot - last2024.ao_premija - last2024.kasko_premija;
+    new Chart(document.getElementById('chartOsigStruktura'), {
+      type: 'doughnut',
+      data: {
+        labels: ['AO (obavezno)', 'Kasko', 'Životno', 'Ostalo neživotno'],
+        datasets: [{ data: [
+          +(last2024.ao_premija/1e6).toFixed(1),
+          +(last2024.kasko_premija/1e6).toFixed(1),
+          +(last2024.premija_zivot/1e6).toFixed(1),
+          +(ostaloNezivot/1e6).toFixed(1),
+        ], backgroundColor: ['rgba(26,86,219,0.85)','rgba(124,58,237,0.8)','rgba(5,150,105,0.8)','rgba(107,114,128,0.6)'] }]
+      },
+      options: { plugins: {
+        legend: { position: 'right', labels: { color: '#374151', font: { size: 11, family: "'Source Sans 3'" }, boxWidth: 12, padding: 8 } },
+        tooltip: { callbacks: { label: ctx => ' '+ctx.label+': '+ctx.parsed?.toFixed(1)+' mil KM' } }
+      }}
+    });
+
+    // Top 10 bar
+    const top10 = data.top_drustva_2024 || [];
+    new Chart(document.getElementById('chartOsigTop10'), {
+      type: 'bar',
+      data: {
+        labels: top10.map(d => d.naziv),
+        datasets: [{ label: 'Premija 2024', data: top10.map(d => +(d.premija/1e6).toFixed(1)),
+          backgroundColor: top10.map((_,i) => `hsla(${i*36%360},60%,45%,0.8)`), borderRadius: 4 }]
+      },
+      options: { ...chartDefaults, indexAxis: 'y',
+        plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.x.toFixed(1)+' mil KM' } }
+        },
+        scales: { ...chartDefaults.scales,
+          x: { ...chartDefaults.scales.x, min: 0, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v+' mil' } },
+          y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, color: '#374151', font: { size: 11 } } }
+        }
+      }
+    });
+
+    // Financije - multi line
+    new Chart(document.getElementById('chartOsigFinancije'), {
+      type: 'line',
+      data: { labels: years, datasets: [
+        { label: 'Dobit (mil KM)', data: years.map(y => +(d[y].dobit/1e6).toFixed(1)), borderColor: '#059669', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Kapital (mil KM)', data: years.map(y => +(d[y].kapital/1e6).toFixed(1)), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 4 },
+      ]},
+      options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(1)+' mil KM' } } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+' mil' } } }
+      }
+    });
+
+    // Omjer steta/premija
+    const ratios = years.map(y => d[y].stete_isplacene ? +((d[y].stete_isplacene/d[y].premija_ukupno)*100).toFixed(1) : null);
+    new Chart(document.getElementById('chartOsigRatio'), {
+      type: 'bar',
+      data: { labels: years, datasets: [{ label: 'Štete/Premija %', data: ratios,
+        backgroundColor: ratios.map(v => v > 50 ? 'rgba(220,38,38,0.7)' : 'rgba(5,150,105,0.7)'), borderRadius: 4 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.y?.toFixed(1)+'%' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, max: 70, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'%' } } }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('osig-status').textContent = 'Greska: ' + e.message;
     console.error(e);
   }
 }
