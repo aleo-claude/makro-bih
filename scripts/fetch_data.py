@@ -555,8 +555,7 @@ def fetch_uino_porezi():
 def fetch_pufbih_direktni():
     """
     Parsira PUFBiH saopstenja za direktne poreze FBiH.
-    URL pattern: https://pufbih.ba/v1/public/upload/files/Uplate-javnih-prihoda-{month}-{year}.pdf
-    ili: https://pufbih.ba/index.php/bs/javnost-rada/statistika/javni-prihodi
+    Kratki timeout da ne blokira pipeline.
     """
     print("-> Direktni porezi FBiH (PUFBiH)...")
     from datetime import date
@@ -564,14 +563,7 @@ def fetch_pufbih_direktni():
     today = date.today()
     results = {}
 
-    # PUFBiH URL patterns za saopstenja
-    url_patterns = [
-        "https://www.pufbih.ba/v1/public/upload/files/Uplate-javnih-prihoda-{month:02d}-{year}.pdf",
-        "https://www.pufbih.ba/v1/public/upload/files/uplate-javnih-prihoda-{month:02d}-{year}.pdf",
-        "https://www.pufbih.ba/v1/public/upload/files/javni-prihodi-{month:02d}-{year}.pdf",
-    ]
-
-    for delta in range(0, 24):
+    for delta in range(0, 12):
         month = today.month - delta
         year = today.year
         while month <= 0:
@@ -580,79 +572,63 @@ def fetch_pufbih_direktni():
 
         period = str(year) + "-" + str(month)
 
-        for pattern in url_patterns:
-            url = pattern.format(month=month, year=year)
+        urls = [
+            f"https://www.pufbih.ba/v1/public/upload/files/Uplate-javnih-prihoda-{month:02d}-{year}.pdf",
+            f"https://www.pufbih.ba/v1/public/upload/files/uplate-javnih-prihoda-{month:02d}-{year}.pdf",
+        ]
+
+        for url in urls:
             try:
-                r = requests.get(url, headers=HEADERS, timeout=20)
+                r = requests.get(url, headers=HEADERS, timeout=8)
                 if r.status_code != 200 or len(r.content) < 3000:
                     continue
 
                 with pdfplumber.open(BytesIO(r.content)) as pdf:
                     text = ""
-                    for page in pdf.pages[:3]:
+                    for page in pdf.pages[:2]:
                         t = page.extract_text()
                         if t: text += t + "\n"
 
                 if not text: continue
 
-                # Trazi kljucne podatke
                 entry = {}
-                lines = text.split("\n")
-
-                for line in lines:
-                    nums = re2.findall(r"[\d,.]+", line)
+                for line in text.split("\n"):
+                    nums = [n for n in re2.findall(r"[\d,.]+", line) if len(n) > 4]
                     if not nums: continue
 
-                    # Porez na dohodak
-                    if any(kw in line for kw in ["dohodak", "fizickih lica", "fizičkih"]):
+                    if any(k in line.lower() for k in ["dohodak", "fizickih", "fizičkih"]):
                         for n in nums:
                             try:
                                 val = float(n.replace(".", "").replace(",", "."))
-                                if 10_000_000 < val < 2_000_000_000:
-                                    entry["porez_dohodak"] = val
-                                    break
+                                if 1e7 < val < 2e9: entry["porez_dohodak"] = val; break
                             except: pass
 
-                    # Porez na dobit
-                    if any(kw in line for kw in ["dobit", "pravnih lica"]):
+                    if any(k in line.lower() for k in ["dobit", "pravnih"]):
                         for n in nums:
                             try:
                                 val = float(n.replace(".", "").replace(",", "."))
-                                if 10_000_000 < val < 2_000_000_000:
-                                    entry["porez_dobit"] = val
-                                    break
+                                if 1e7 < val < 2e9: entry["porez_dobit"] = val; break
                             except: pass
 
-                    # Doprinosi
-                    if any(kw in line for kw in ["doprinosi", "penzijsko", "zdravstveno"]):
+                    if any(k in line.lower() for k in ["ukupno", "ukupna"]):
                         for n in nums:
                             try:
                                 val = float(n.replace(".", "").replace(",", "."))
-                                if 100_000_000 < val < 10_000_000_000:
-                                    entry["doprinosi"] = val
-                                    break
-                            except: pass
-
-                    # Ukupno
-                    if any(kw in line.lower() for kw in ["ukupno", "ukupna naplata", "javnih prihoda"]):
-                        for n in nums:
-                            try:
-                                val = float(n.replace(".", "").replace(",", "."))
-                                if 500_000_000 < val < 20_000_000_000:
+                                if 5e8 < val < 2e10:
                                     if "ukupno" not in entry or val > entry["ukupno"]:
                                         entry["ukupno"] = val
                             except: pass
 
                 if entry:
                     results[period] = entry
-                    print(f"  OK {period}: dohodak={entry.get('porez_dohodak',0)/1e6:.0f}M, dobit={entry.get('porez_dobit',0)/1e6:.0f}M, ukupno={entry.get('ukupno',0)/1e6:.0f}M")
+                    print(f"  OK {period}: {entry}")
                     break
 
-            except Exception as e:
+            except Exception:
                 pass
 
     if not results:
-        print("  Nema podataka iz PUFBiH saopstenja")
+        print("  Nema podataka iz PUFBiH")
         path = os.path.join(DATA_DIR, "direktni_porezi.json")
         if not os.path.exists(path):
             save_json("direktni_porezi.json", {
@@ -666,67 +642,7 @@ def fetch_pufbih_direktni():
         "source": "PUFBiH",
         "name": "Direktni porezi i doprinosi FBiH",
         "updated": datetime.now().isoformat()[:10],
-        "note": "Porez na dohodak, dobit, doprinosi (kumulativni YTD)",
         "periods": sorted_p,
         "data": {p: results[p] for p in sorted_p}
     })
     return True
-
-if __name__ == '__main__':
-    print(f"\n{'='*55}")
-    print(f"Makro BiH - Osvjezavanje podataka")
-    print(f"Datum: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
-    print(f"{'='*55}\n")
-
-    results = {}
-    results['maloprodaja'] = fetch_standard('maloprodaja','Indeksi prometa trgovine na malo',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/STS_01.xlsx'],[0,1],'maloprodaja.json')
-    print()
-    results['turizam'] = fetch_standard('turizam','Turizam',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/TUR_01.xlsx'],[0,1,2],'turizam.json')
-    print()
-    results['industrija'] = fetch_standard('industrija','Ind. proizvodnja',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/IND_01.xlsx'],[0,1],'industrija.json')
-    print()
-    results['vanjska_trgovina'] = fetch_vanjska_trgovina()
-    print()
-    results['vt_detalji'] = fetch_etr_detalji()
-    print()
-    results['cpi'] = fetch_cpi_pdf()
-    print()
-    results['bdp'] = fetch_standard('bdp','Bruto domaci proizvod (BDP)',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_02.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/GDP_01.xlsx'],
-        [0,1,2],'bdp.json')
-    print()
-    # LAB_01: sheet 0=bruto, sheet 1=neto (ako postoji)
-    # LAB_02/03: alternativni izvori neto plaća
-    results['place'] = fetch_place_neto_bruto()
-    print()
-    results['zaposlenost'] = fetch_standard('zaposlenost','Zaposleni i trziste rada (ARS)',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_04.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_06.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],
-        [0,1,2,3],'zaposlenost.json')
-    print()
-    results['nezaposlenost'] = fetch_standard('nezaposlenost','Registrovana nezaposlenost',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_05.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_02.xlsx'],
-        [0,1,2],'nezaposlenost.json')
-    print()
-
-    results["uino_porezi"] = fetch_uino_porezi()
-    print()
-    results["direktni_porezi"] = fetch_pufbih_direktni()
-    print()
-    print("-> Meta...")
-    update_meta(results)
-    success = sum(results.values())
-    print(f"\n{'='*55}")
-    print(f"Zavrseno: {success}/{len(results)} uspjesno")
-    for key, ok in results.items():
-        print(f"  {'OK' if ok else 'X '} {key}")
-    print(f"{'='*55}\n")
