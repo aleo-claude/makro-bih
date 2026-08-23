@@ -492,6 +492,65 @@ def fetch_cpi_pdf():
     })
     return True
 
+def fetch_uino_porezi():
+    """
+    Preuzima UINO Excel s prihodima od indirektnih poreza 2004-2026.
+    URL: https://www.uino.gov.ba/portal/wp-content/uploads/10-STATISTIKA/1-Prihodi/Prihodi-UKUPNO-2004-2026-objedinjeni.xlsx
+    """
+    print("-> Indirektni porezi BiH (UINO)...")
+    url = "https://www.uino.gov.ba/portal/wp-content/uploads/10-STATISTIKA/1-Prihodi/Prihodi-UKUPNO-2004-2026-objedinjeni.xlsx"
+    
+    # UINO headers
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://www.uino.gov.ba/portal/bs/statistika/',
+        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
+    }
+    
+    try:
+        r = requests.get(url, headers=headers, timeout=30)
+        r.raise_for_status()
+        
+        if len(r.content) < 2000:
+            raise ValueError(f"Premali fajl: {len(r.content)} bytes")
+        
+        wb = openpyxl.load_workbook(BytesIO(r.content), data_only=True)
+        print(f"  Sheetovi: {wb.sheetnames}")
+        
+        all_data = {}
+        for sname in wb.sheetnames[:4]:
+            ws = wb[sname]
+            parsed = parse_sheet(ws)
+            if parsed:
+                compact = compact_series(parsed, n_periods=240, max_series=30)
+                all_data[sname] = compact
+                first = next(iter(compact.values()))
+                print(f"  OK '{sname}': {len(compact)} serija, {len(first)} perioda")
+        
+        if not all_data:
+            raise ValueError("Nema podataka")
+        
+        save_json("uino_porezi.json", {
+            "source": "UINO BiH",
+            "name": "Prihodi od indirektnih poreza BiH 2004-2026",
+            "url": url,
+            "updated": datetime.now().isoformat()[:10],
+            "note": "PDV, akcize, carine, putarine",
+            "sheets": all_data
+        })
+        return True
+        
+    except Exception as e:
+        print(f"  X UINO: {e}")
+        path = os.path.join(DATA_DIR, "uino_porezi.json")
+        if not os.path.exists(path):
+            save_json("uino_porezi.json", {
+                "source": "UINO BiH", "error": str(e),
+                "updated": datetime.now().isoformat()[:10], "sheets": {}
+            })
+        return False
+
+
 if __name__ == '__main__':
     print(f"\n{'='*55}")
     print(f"Makro BiH - Osvjezavanje podataka")
@@ -538,6 +597,8 @@ if __name__ == '__main__':
         [0,1,2],'nezaposlenost.json')
     print()
 
+    results["uino_porezi"] = fetch_uino_porezi()
+    print()
     print("-> Meta...")
     update_meta(results)
     success = sum(results.values())
