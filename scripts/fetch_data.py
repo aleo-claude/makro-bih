@@ -321,6 +321,9 @@ def fetch_place_neto_bruto():
 
                 # Trazi pattern "iznosi X YYY KM" ili "iznosila je X YYY KM"
                 # gdje je broj split kao "1 684" ili "1644" ili samo "838"
+                # Normaliziraj tekst - zamijeni newline s razmakom za lakse parsiranje
+                text_norm = re2.sub(r'\s+', ' ', text)
+
                 patterns_neto = [
                     r"iznosila je (\d{1,2} \d{3}) KM",
                     r"iznosi (\d{1,2} \d{3}) KM",
@@ -328,13 +331,18 @@ def fetch_place_neto_bruto():
                     r"iznosila je (\d{3,4}) KM",
                     r"iznosi (\d{3,4}) KM",
                     r"amounted to (\d{3,4}) KM",
+                    r"iznosila je (\d) (\d{3}) KM",
+                    r"amounted to (\d) (\d{3}) KM",
                 ]
 
                 for pat in patterns_neto:
-                    m = re2.search(pat, text, re2.IGNORECASE)
+                    m = re2.search(pat, text_norm, re2.IGNORECASE)
                     if m:
                         try:
-                            val = int(m.group(1).replace(" ", ""))
+                            if m.lastindex == 2:
+                                val = int(m.group(1) + m.group(2))
+                            else:
+                                val = int(m.group(1).replace(" ", ""))
                             if 700 <= val <= 3000:
                                 entry["neto"] = val
                                 break
@@ -591,6 +599,167 @@ def update_meta(results):
     save_json('meta.json', meta)
 
 
+
+def fetch_cbbh_banke():
+    """
+    Preuzima CBBH Statistical Appendix Excel fajlove:
+    - Attachment 12a: Krediti komercijalnih banaka
+    - Attachment 10a: Depoziti kod komercijalnih banaka  
+    - Attachment 7a: Krediti domacinstvima po namjeni
+    - Attachment 4a: Bilanca komercijalnih banaka
+    """
+    print("-> Bankarski sektor BiH (CBBH Statistical Appendix)...")
+
+    cbbh_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://www.cbbh.ba/content/read/1122",
+        "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*",
+    }
+
+    datasets = [
+        ("krediti", "Krediti komercijalnih banaka",
+         "https://www.cbbh.ba/content/DownloadAttachment/?id=7b5f458b-0d66-49c0-8791-99267bc04ccf&langTag=en"),
+        ("depoziti", "Depoziti kod komercijalnih banaka",
+         "https://www.cbbh.ba/content/DownloadAttachment/?id=53a74b79-f1c9-49d3-8de7-1df1f86e1f53&langTag=en"),
+        ("krediti_domacinstava", "Krediti domacinstvima po namjeni",
+         "https://www.cbbh.ba/content/DownloadAttachment/?id=72b09814-d9f1-400f-af5d-04b62f36659d&langTag=en"),
+        ("bilanca", "Bilanca komercijalnih banaka",
+         "https://www.cbbh.ba/content/DownloadAttachment/?id=8f58ace6-b5f4-419e-bf68-096e05bfcb64&langTag=en"),
+        ("dsi", "Direktne strane investicije po zemlji",
+         "https://www.cbbh.ba/content/DownloadAttachment/?id=3b165775-0784-4b9a-932f-60be41fcb8ec&langTag=en"),
+    ]
+
+    all_sheets = {}
+
+    for key, name, url in datasets:
+        try:
+            r = requests.get(url, headers=cbbh_headers, timeout=30)
+            if r.status_code != 200 or len(r.content) < 2000:
+                print(f"  X {key}: HTTP {r.status_code}, {len(r.content)} bytes")
+                continue
+
+            wb = openpyxl.load_workbook(BytesIO(r.content), data_only=True)
+            print(f"  OK {key} sheetovi: {wb.sheetnames[:5]}")
+
+            for sname in wb.sheetnames[:3]:
+                ws = wb[sname]
+                parsed = parse_sheet(ws)
+                if parsed and len(parsed) > 0:
+                    compact = compact_series(parsed, n_periods=120)
+                    if compact:
+                        all_sheets[f"{key}_{sname}"] = compact
+                        first = next(iter(compact.values()))
+                        print(f"    OK '{sname}': {len(compact)} serija, {len(first)} perioda")
+
+        except Exception as e:
+            print(f"  X {key}: {e}")
+
+    if not all_sheets:
+        print("  Nema podataka s CBBH - URL-ovi blokirani na GitHub serverima")
+        path = os.path.join(DATA_DIR, "banke.json")
+        if not os.path.exists(path):
+            save_json("banke.json", {
+                "source": "CBBH", "error": "403 Forbidden",
+                "updated": datetime.now().isoformat()[:10], "sheets": {}
+            })
+        return False
+
+    save_json("banke.json", {
+        "source": "CBBH Statistical Appendix",
+        "name": "Bankarski sektor BiH",
+        "url": "https://www.cbbh.ba/content/read/1122",
+        "updated": datetime.now().isoformat()[:10],
+        "note": "Krediti, depoziti, bilanca, DSI",
+        "sheets": all_sheets
+    })
+    print(f"  OK banke.json ({len(all_sheets)} dataseta)")
+    return True
+
+
+
+def update_meta(results):
+    meta = {'last_run': datetime.now().isoformat(), 'updated': datetime.now().isoformat()[:10], 'datasets': {}}
+    for key in results:
+        path = os.path.join(DATA_DIR, key+'.json')
+        if os.path.exists(path):
+            with open(path) as f:
+                d = json.load(f)
+            meta['datasets'][key] = {
+                'updated': d.get('updated'), 'has_data': bool(d.get('sheets') or d.get('data')),
+                'size_kb': os.path.getsize(path) // 1024
+            }
+    save_json('meta.json', meta)
+
+
+
+def fetch_cbbh_banke():
+    """
+    Preuzima CBBH Statistical Appendix Excel fajlove:
+    - Attachment 12a: Krediti komercijalnih banaka
+    - Attachment 10a: Depoziti kod komercijalnih banaka
+    - Attachment 4a: Bilanca komercijalnih banaka
+    """
+    print("-> Bankarski sektor BiH (CBBH Statistical Appendix)...")
+
+    cbbh_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://www.cbbh.ba/",
+        "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*",
+    }
+
+    datasets = {
+        "krediti": "https://www.cbbh.ba/content/DownloadAttachment/?id=7b5f458b-0d66-49c0-8791-99267bc04ccf&langTag=en",
+        "depoziti": "https://www.cbbh.ba/content/DownloadAttachment/?id=53a74b79-f1c9-49d3-8de7-1df1f86e1f53&langTag=en",
+        "krediti_domacinstava": "https://www.cbbh.ba/content/DownloadAttachment/?id=72b09814-d9f1-400f-af5d-04b62f36659d&langTag=en",
+        "bilanca": "https://www.cbbh.ba/content/DownloadAttachment/?id=8f58ace6-b5f4-419e-bf68-096e05bfcb64&langTag=en",
+    }
+
+    all_sheets = {}
+
+    for name, url in datasets.items():
+        try:
+            r = requests.get(url, headers=cbbh_headers, timeout=30)
+            if r.status_code != 200 or len(r.content) < 2000:
+                print(f"  X {name}: HTTP {r.status_code}")
+                continue
+
+            wb = openpyxl.load_workbook(BytesIO(r.content), data_only=True)
+            print(f"  {name} sheetovi: {wb.sheetnames[:4]}")
+
+            for sname in wb.sheetnames[:3]:
+                parsed = parse_sheet(wb[sname])
+                if parsed and len(parsed) >= 2:
+                    compact = compact_series(parsed, n_periods=120)
+                    if compact:
+                        key = f"{name}_{sname}"
+                        all_sheets[key] = compact
+                        first = next(iter(compact.values()))
+                        print(f"    OK '{sname}': {len(compact)} serija, {len(first)} perioda")
+                        break  # Uzmi samo prvi korisni sheet
+
+        except Exception as e:
+            print(f"  X {name}: {e}")
+
+    if not all_sheets:
+        print("  Nema podataka s CBBH")
+        path = os.path.join(DATA_DIR, "banke.json")
+        if not os.path.exists(path):
+            save_json("banke.json", {
+                "source": "CBBH", "error": "Nedostupno",
+                "updated": datetime.now().isoformat()[:10], "sheets": {}
+            })
+        return False
+
+    save_json("banke.json", {
+        "source": "CBBH Statistical Appendix",
+        "name": "Bankarski sektor BiH - krediti, depoziti, bilanca",
+        "url": "https://www.cbbh.ba/content/read/1122",
+        "updated": datetime.now().isoformat()[:10],
+        "note": "Krediti i depoziti komercijalnih banaka BiH",
+        "sheets": all_sheets
+    })
+    return True
+
 if __name__ == '__main__':
     print(f"\n{'='*55}")
     print(f"Makro BiH - Osvjezavanje podataka")
@@ -598,35 +767,34 @@ if __name__ == '__main__':
     print(f"{'='*55}\n")
 
     results = {}
-    results['maloprodaja'] = fetch_standard('maloprodaja', 'Indeksi prometa trgovine na malo',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/STS_01.xlsx'], [0, 1], 'maloprodaja.json')
+    results['maloprodaja'] = fetch_standard('maloprodaja','Indeksi prometa trgovine na malo',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/STS_01.xlsx'],[0,1],'maloprodaja.json')
     print()
-    results['turizam'] = fetch_standard('turizam', 'Turizam',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/TUR_01.xlsx'], [0, 1, 2], 'turizam.json')
+    results['turizam'] = fetch_standard('turizam','Turizam',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/TUR_01.xlsx'],[0,1,2],'turizam.json')
     print()
-    results['industrija'] = fetch_standard('industrija', 'Ind. proizvodnja',
-        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/IND_01.xlsx'], [0, 1], 'industrija.json')
+    results['industrija'] = fetch_standard('industrija','Ind. proizvodnja',
+        ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/IND_01.xlsx'],[0,1],'industrija.json')
     print()
     results['vanjska_trgovina'] = fetch_vanjska_trgovina()
     print()
     results['cpi'] = fetch_cpi_pdf()
     print()
-    results['bdp'] = fetch_standard('bdp', 'BDP',
+    results['bdp'] = fetch_standard('bdp','BDP',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_01.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_02.xlsx'], [0, 1], 'bdp.json')
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/NAT_02.xlsx'],[0,1],'bdp.json')
     print()
     results['place'] = fetch_place_neto_bruto()
     print()
-    results['zaposlenost'] = fetch_standard('zaposlenost', 'Zaposleni i trziste rada (ARS)',
+    results['zaposlenost'] = fetch_standard('zaposlenost','Zaposleni i trziste rada (ARS)',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_04.xlsx',
          'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_02.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_06.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/EMP_01.xlsx'],
-        [0, 1, 2, 3], 'zaposlenost.json')
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_06.xlsx'],
+        [0,1,2,3],'zaposlenost.json')
     print()
-    results['nezaposlenost'] = fetch_standard('nezaposlenost', 'Stopa nezaposlenosti (ARS)',
+    results['nezaposlenost'] = fetch_standard('nezaposlenost','Stopa nezaposlenosti (ARS)',
         ['https://bhas.gov.ba/data/Publikacije/VremenskeSerije/LAB_05.xlsx',
-         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_01.xlsx'], [0, 1, 2], 'nezaposlenost.json')
+         'https://bhas.gov.ba/data/Publikacije/VremenskeSerije/UNE_01.xlsx'],[0,1,2],'nezaposlenost.json')
     print()
     results['uino_porezi'] = fetch_uino_porezi()
     print()
@@ -634,8 +802,12 @@ if __name__ == '__main__':
     print()
     results['direktni_porezi'] = fetch_pufbih_direktni()
     print()
+    results['banke'] = fetch_cbbh_banke()
+    print()
 
     print("-> Meta...")
+    results["banke"] = fetch_cbbh_banke()
+    print()
     update_meta(results)
 
     success = sum(1 for v in results.values() if v)
