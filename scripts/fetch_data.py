@@ -602,79 +602,76 @@ def update_meta(results):
 
 def fetch_cbbh_banke():
     """
-    Preuzima CBBH Statistical Appendix Excel fajlove:
-    - Attachment 12a: Krediti komercijalnih banaka
-    - Attachment 10a: Depoziti kod komercijalnih banaka  
-    - Attachment 7a: Krediti domacinstvima po namjeni
-    - Attachment 4a: Bilanca komercijalnih banaka
+    Preuzima bankarske pokazatelje za BiH s World Bank API.
+    Besplatan API, automatski se azurira godisnje.
     """
-    print("-> Bankarski sektor BiH (CBBH Statistical Appendix)...")
+    print("-> Bankarski sektor BiH (World Bank API)...")
 
-    cbbh_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://www.cbbh.ba/content/read/1122",
-        "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*",
+    # World Bank API indicators za BiH (country code: BA)
+    indicators = {
+        'FR.INR.LEND': 'Kamatna stopa na kredite (%)',
+        'FR.INR.DPST': 'Kamatna stopa na depozite (%)',
+        'FB.AST.NPER.ZS': 'NPL ratio (%)',
+        'FD.AST.PRVT.GD.ZS': 'Krediti privatnom sektoru (% BDP)',
+        'FB.BNK.CAPA.ZS': 'Kapital/aktiva banaka (%)',
+        'CM.MKT.LCAP.GD.ZS': 'Trzisna kapitalizacija (% BDP)',
+        'NY.GDP.MKTP.CD': 'BDP (tekuce USD)',
+        'NY.GDP.MKTP.KD.ZG': 'BDP rast (%)',
+        'FP.CPI.TOTL.ZG': 'Inflacija (CPI %)',
+        'NE.TRD.GNFS.ZS': 'Vanjska trgovina (% BDP)',
     }
 
-    datasets = [
-        ("krediti", "Krediti komercijalnih banaka",
-         "https://www.cbbh.ba/content/DownloadAttachment/?id=7b5f458b-0d66-49c0-8791-99267bc04ccf&langTag=en"),
-        ("depoziti", "Depoziti kod komercijalnih banaka",
-         "https://www.cbbh.ba/content/DownloadAttachment/?id=53a74b79-f1c9-49d3-8de7-1df1f86e1f53&langTag=en"),
-        ("krediti_domacinstava", "Krediti domacinstvima po namjeni",
-         "https://www.cbbh.ba/content/DownloadAttachment/?id=72b09814-d9f1-400f-af5d-04b62f36659d&langTag=en"),
-        ("bilanca", "Bilanca komercijalnih banaka",
-         "https://www.cbbh.ba/content/DownloadAttachment/?id=8f58ace6-b5f4-419e-bf68-096e05bfcb64&langTag=en"),
-        ("dsi", "Direktne strane investicije po zemlji",
-         "https://www.cbbh.ba/content/DownloadAttachment/?id=3b165775-0784-4b9a-932f-60be41fcb8ec&langTag=en"),
-    ]
+    all_series = {}
+    wb_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
-    all_sheets = {}
-
-    for key, name, url in datasets:
+    for code, name in indicators.items():
+        url = f"https://api.worldbank.org/v2/country/BA/indicator/{code}?format=json&per_page=30&mrv=25"
         try:
-            r = requests.get(url, headers=cbbh_headers, timeout=30)
-            if r.status_code != 200 or len(r.content) < 2000:
-                print(f"  X {key}: HTTP {r.status_code}, {len(r.content)} bytes")
+            r = requests.get(url, headers=wb_headers, timeout=20)
+            if r.status_code != 200:
+                print(f"  X {code}: HTTP {r.status_code}")
                 continue
 
-            wb = openpyxl.load_workbook(BytesIO(r.content), data_only=True)
-            print(f"  OK {key} sheetovi: {wb.sheetnames[:5]}")
+            data = r.json()
+            if not data or len(data) < 2 or not data[1]:
+                print(f"  X {code}: nema podataka")
+                continue
 
-            for sname in wb.sheetnames[:3]:
-                ws = wb[sname]
-                parsed = parse_sheet(ws)
-                if parsed and len(parsed) > 0:
-                    compact = compact_series(parsed, n_periods=120)
-                    if compact:
-                        all_sheets[f"{key}_{sname}"] = compact
-                        first = next(iter(compact.values()))
-                        print(f"    OK '{sname}': {len(compact)} serija, {len(first)} perioda")
+            series = {}
+            for entry in data[1]:
+                if entry.get('value') is not None:
+                    series[entry['date']] = entry['value']
+
+            if series:
+                all_series[code] = {
+                    'name': name,
+                    'data': series
+                }
+                years = sorted(series.keys())
+                print(f"  OK {code}: {len(series)} godina, zadnji {years[-1]}={series[years[-1]]:.2f}")
 
         except Exception as e:
-            print(f"  X {key}: {e}")
+            print(f"  X {code}: {e}")
 
-    if not all_sheets:
-        print("  Nema podataka s CBBH - URL-ovi blokirani na GitHub serverima")
+    if not all_series:
+        print("  Nema podataka s World Bank API")
         path = os.path.join(DATA_DIR, "banke.json")
         if not os.path.exists(path):
             save_json("banke.json", {
-                "source": "CBBH", "error": "403 Forbidden",
-                "updated": datetime.now().isoformat()[:10], "sheets": {}
+                "source": "World Bank API", "error": "Nedostupno",
+                "updated": datetime.now().isoformat()[:10], "indicators": {}
             })
         return False
 
     save_json("banke.json", {
-        "source": "CBBH Statistical Appendix",
-        "name": "Bankarski sektor BiH",
-        "url": "https://www.cbbh.ba/content/read/1122",
+        "source": "World Bank API",
+        "name": "Bankarski sektor i makroekonomija BiH",
+        "url": "https://data.worldbank.org/country/BA",
         "updated": datetime.now().isoformat()[:10],
-        "note": "Krediti, depoziti, bilanca, DSI",
-        "sheets": all_sheets
+        "note": "Godisnji podaci, automatski osvjezava World Bank",
+        "indicators": all_series
     })
-    print(f"  OK banke.json ({len(all_sheets)} dataseta)")
     return True
-
 
 
 def update_meta(results):
