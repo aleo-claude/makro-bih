@@ -516,7 +516,7 @@ input[type="text"] { width: 200px; }
   </div>
 
   <div class="sidebar-section">
-    <div class="sidebar-section-label">Potrošnja</div>
+    <div class="sidebar-section-label">Ekonomska aktivnost</div>
     <div class="nav-item active" onclick="navTo('fiskalni', this)">
       <span class="nav-icon">🧾</span>
       Fiskalni promet
@@ -573,6 +573,11 @@ input[type="text"] { width: 200px; }
       <span class="nav-icon">🛡️</span>
       Tržište osiguranja
       <span class="nav-badge">AZOBiH</span>
+    </div>
+    <div class="nav-item" onclick="navTo('banke', this)" data-page="banke">
+      <span class="nav-icon">🏛️</span>
+      Bankarski sektor
+      <span class="nav-badge">World Bank</span>
     </div>
   </div>
 
@@ -1218,6 +1223,39 @@ input[type="text"] { width: 200px; }
     <div id="osig-status" class="note">Učitavam podatke...</div>
   </div>
 
+
+  <!-- BANKE -->
+  <div id="page-banke" class="section-page">
+    <div class="page-header">
+      <h2>Bankarski sektor i makroekonomija BiH</h2>
+      <p>Kamatne stope, NPL, BDP, vanjska trgovina · Izvor: <a href="https://data.worldbank.org/country/BA" target="_blank">World Bank Open Data</a> · Godišnji podaci</p>
+    </div>
+    <div id="banke-kpi" class="kpi-strip"></div>
+    <div class="chart-grid">
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Kamatne stope — krediti i depoziti (%)</h3></div>
+        <p>Prosječna kamatna stopa na kredite i depozite komercijalnih banaka BiH</p>
+        <div class="chart-wrap tall"><canvas id="chartBankeKamate"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>BDP rast (%)</h3></div>
+        <p>Godišnja stopa rasta realnog BDP-a BiH</p>
+        <div class="chart-wrap"><canvas id="chartBankeBdp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-header"><h3>NPL ratio i kapital banaka (%)</h3></div>
+        <p>Udio loših kredita i omjer kapitala/aktive</p>
+        <div class="chart-wrap"><canvas id="chartBankeNpl"></canvas></div>
+      </div>
+      <div class="chart-card span2">
+        <div class="cc-header"><h3>Krediti privatnom sektoru (% BDP)</h3></div>
+        <p>Dubina financijskog tržišta — krediti kao % BDP</p>
+        <div class="chart-wrap"><canvas id="chartBankeKrediti"></canvas></div>
+      </div>
+    </div>
+    <div id="banke-status" class="note">Učitavam podatke...</div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -1233,6 +1271,7 @@ const PAGE_TITLES = {
   uino_porezi: 'Indirektni porezi BiH',
   vozila: 'Registracija vozila',
   osiguranje: 'Tržište osiguranja BiH',
+  banke: 'Bankarski sektor BiH',
 };
 
 function navTo(pageId, el) {
@@ -1259,6 +1298,7 @@ function navTo(pageId, el) {
   else if (pageId === 'uino_porezi') initUinoPorezi();
   else if (pageId === 'vozila') initVozila();
   else if (pageId === 'osiguranje') initOsiguranje();
+  else if (pageId === 'banke') initBanke();
   else if (pageId === 'turizam') initTurizam();
 }
 
@@ -3526,6 +3566,125 @@ async function initOsiguranje() {
 
   } catch(e) {
     document.getElementById('osig-status').textContent = 'Greska: ' + e.message;
+    console.error(e);
+  }
+}
+
+
+// BANKE - World Bank API podaci
+let bankeInited = false;
+
+async function initBanke() {
+  if (bankeInited) return;
+  bankeInited = true;
+  const st = document.getElementById('banke-status');
+  try {
+    st.textContent = 'Ucitavam...';
+    const r = await fetch(DATA_BASE + 'banke.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    if (!data.indicators || !Object.keys(data.indicators).length) {
+      st.textContent = 'Nema podataka.'; return;
+    }
+
+    const ind = data.indicators;
+
+    // Helper - uzmi sortirane godine i vrijednosti
+    function getSeries(code) {
+      if (!ind[code]) return { years: [], vals: [] };
+      const d = ind[code].data;
+      const years = Object.keys(d).sort();
+      return { years, vals: years.map(y => d[y]) };
+    }
+
+    const lend = getSeries('FR.INR.LEND');
+    const dpst = getSeries('FR.INR.DPST');
+    const npl = getSeries('FB.AST.NPER.ZS');
+    const cap = getSeries('FB.BNK.CAPA.ZS');
+    const bdp = getSeries('NY.GDP.MKTP.KD.ZG');
+    const krediti = getSeries('FD.AST.PRVT.GD.ZS');
+
+    // Zadnje vrijednosti
+    const lastLend = lend.vals[lend.vals.length-1];
+    const lastDpst = dpst.vals[dpst.vals.length-1];
+    const lastNpl = npl.vals[npl.vals.length-1];
+    const lastBdp = bdp.vals[bdp.vals.length-1];
+    const lastKred = krediti.vals[krediti.vals.length-1];
+    const spread = lastLend && lastDpst ? (lastLend - lastDpst) : null;
+
+    makeKPI('banke-kpi', [
+      { label: 'Kamatna stopa krediti', value: lastLend ? lastLend.toFixed(2)+'%' : '-',
+        change: lend.years[lend.years.length-1], changeClass: 'neu' },
+      { label: 'Kamatna stopa depoziti', value: lastDpst ? lastDpst.toFixed(2)+'%' : '-',
+        change: 'Spread: '+(spread ? spread.toFixed(2)+'pp' : '-'), changeClass: 'neu' },
+      { label: 'NPL ratio', value: lastNpl ? lastNpl.toFixed(2)+'%' : '-',
+        change: npl.years[npl.years.length-1], changeClass: lastNpl < 5 ? 'pos' : 'neg' },
+      { label: 'BDP rast', value: lastBdp ? (lastBdp>0?'+':'')+lastBdp.toFixed(2)+'%' : '-',
+        change: bdp.years[bdp.years.length-1], changeClass: lastBdp > 0 ? 'pos' : 'neg' },
+    ]);
+
+    st.innerHTML = 'Izvor: <a href="https://data.worldbank.org/country/BA" target="_blank">World Bank Open Data</a> · Godišnji podaci · Azurirano: ' + data.updated;
+    st.style.borderLeftColor = 'var(--pos)';
+
+    // Kamatne stope - line chart
+    const allYears = [...new Set([...lend.years, ...dpst.years])].sort();
+    new Chart(document.getElementById('chartBankeKamate'), {
+      type: 'line',
+      data: { labels: allYears, datasets: [
+        { label: 'Kamatna stopa krediti (%)', data: allYears.map(y => ind['FR.INR.LEND']?.data[y]||null),
+          borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.06)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+        { label: 'Kamatna stopa depoziti (%)', data: allYears.map(y => ind['FR.INR.DPST']?.data[y]||null),
+          borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 },
+      ]},
+      options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(2)+'%' } } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'%' } } }
+      }
+    });
+
+    // BDP rast
+    new Chart(document.getElementById('chartBankeBdp'), {
+      type: 'bar',
+      data: { labels: bdp.years, datasets: [{ label: 'BDP rast (%)', data: bdp.vals,
+        backgroundColor: bdp.vals.map(v => v >= 0 ? 'rgba(5,150,105,0.75)' : 'rgba(220,38,38,0.7)'), borderRadius: 4 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+(ctx.parsed.y>0?'+':'')+ctx.parsed.y?.toFixed(2)+'%' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'%' } } }
+      }
+    });
+
+    // NPL i kapital - dual line
+    const nplYears = [...new Set([...npl.years, ...cap.years])].sort();
+    new Chart(document.getElementById('chartBankeNpl'), {
+      type: 'line',
+      data: { labels: nplYears, datasets: [
+        { label: 'NPL ratio (%)', data: nplYears.map(y => ind['FB.AST.NPER.ZS']?.data[y]||null),
+          borderColor: '#dc2626', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 3 },
+        { label: 'Kapital/aktiva (%)', data: nplYears.map(y => ind['FB.BNK.CAPA.ZS']?.data[y]||null),
+          borderColor: '#059669', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2, pointRadius: 3 },
+      ]},
+      options: { ...chartDefaults, interaction: { mode: 'index', intersect: false },
+        plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' '+ctx.dataset.label+': '+ctx.parsed.y?.toFixed(2)+'%' } } },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'%' } } }
+      }
+    });
+
+    // Krediti privatnom sektoru
+    new Chart(document.getElementById('chartBankeKrediti'), {
+      type: 'line',
+      data: { labels: krediti.years, datasets: [{ label: 'Krediti privatnom sektoru (% BDP)', data: krediti.vals,
+        borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.08)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 3 }] },
+      options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' '+ctx.parsed.y?.toFixed(1)+'% BDP' } }
+        },
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'%' } } }
+      }
+    });
+
+  } catch(e) {
+    document.getElementById('banke-status').textContent = 'Greska: ' + e.message;
     console.error(e);
   }
 }
