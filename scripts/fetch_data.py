@@ -206,9 +206,9 @@ def fetch_vanjska_trgovina():
     top10_hs = sorted(hs_totals, key=hs_totals.get, reverse=True)[:10]
 
     data = {
-        'UK': uk_compact,
-        'EX': izvoz,  # izvoz (ETR_01)
-        'IM': uvoz,   # uvoz (ETR_02)
+        'UK': izvoz,  # UK = izvoz (ETR_01) - za kompatibilnost
+        'EX': uvoz,   # EX = uvoz (ETR_02) - za dashboard koji cita EX kao uvoz
+        'IM': {},     # IM prazno - koristimo EX kao uvoz
         'annual': {
             yr: {
                 'uk': round(annual_uk.get(yr, 0)/1e9, 3),
