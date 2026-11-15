@@ -390,7 +390,19 @@ def fetch_place_neto_bruto():
         return False
 
     sorted_p = sort_periods(list(place_data.keys())) if place_data else []
+    # Sacuvaj rucno unesene godisnje podatke (godisnji, sektori_nazivi) iz postojeceg place.json / place_manual.json
+    keep = {}
+    for fn in ("place.json", "place_manual.json"):
+        try:
+            with open(os.path.join(DATA_DIR, fn), encoding="utf-8") as fh:
+                old_d = json.load(fh)
+            for k in ("godisnji", "sektori_nazivi"):
+                if old_d.get(k) and k not in keep:
+                    keep[k] = old_d[k]
+        except Exception:
+            pass
     save_json("place.json", {
+        **keep,
         "source": "BHAS LAB_04/LAB_01",
         "name": "Prosjecne place i place po sektorima BiH",
         "updated": datetime.now().isoformat()[:10],
