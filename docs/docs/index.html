@@ -520,7 +520,7 @@ select:focus, input[type="text"]:focus { border-color: var(--accent); }
       <div class="chart-grid">
         <div class="chart-card">
           <div class="cc-header"><h3>Ukupni godišnji promet FBiH</h3></div>
-          <p>M BAM · 2020–2025</p>
+          <p>M BAM · 2020–2025 · <b>2026 = samo I–X (10 mjeseci)</b></p>
           <div class="chart-wrap"><canvas id="chartAnnualTotal"></canvas></div>
         </div>
         <div class="chart-card">
@@ -534,13 +534,13 @@ select:focus, input[type="text"]:focus { border-color: var(--accent); }
           <div class="chart-wrap tall"><canvas id="chartTop15"></canvas></div>
         </div>
         <div class="chart-card">
-          <div class="cc-header"><h3>Top 5 — Promet 2025</h3></div>
-          <p>Apsolutni promet u M BAM</p>
+          <div class="cc-header"><h3>Top 5 — Promet 2026 (I–X)</h3></div>
+          <p>Apsolutni promet u M BAM, januar–oktobar 2026</p>
           <div class="chart-wrap short"><canvas id="chartTop5Promet"></canvas></div>
         </div>
         <div class="chart-card">
-          <div class="cc-header"><h3>Top 5 — Rast 2024→2025</h3></div>
-          <p>Najveći YoY rast (%) u 2025</p>
+          <div class="cc-header"><h3>Top 5 — Rast 2025→2026</h3></div>
+          <p>Rast prometa mart–okt 2026 vs mart–okt 2025 (%)</p>
           <div class="chart-wrap short"><canvas id="chartTop5Rast"></canvas></div>
         </div>
       </div>
@@ -1296,15 +1296,21 @@ function renderPagination(id, total, current, size, cb) {
 function initAnnualCharts() {
   const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
   const totals = years.map(y => DATA.annual_totals[y] / 1e9);
+  const ytd = (y) => Object.keys(DATA.monthly_fbih).filter(k => k.startsWith(y+'-')).sort();
+  const ytd26 = ytd('2026'); const ytdN = ytd26.length;
+  const sum26 = ytd26.reduce((a,k)=>a+DATA.monthly_fbih[k],0);
+  const sum25 = ytd26.reduce((a,k)=>a+(DATA.monthly_fbih['2025-'+k.slice(5)]||0),0);
+  const yearsT = years.concat(['2026 (I–X)']);
+  totals.push(sum26/1e9);
 
   new Chart(document.getElementById('chartAnnualTotal'), {
     type: 'bar',
     data: {
-      labels: years.map(String),
+      labels: yearsT,
       datasets: [{
         label: 'Ukupni promet (mlrd BAM)',
         data: totals,
-        backgroundColor: ['rgba(26,86,219,0.15)','rgba(26,86,219,0.3)','rgba(26,86,219,0.5)','rgba(26,86,219,0.65)','rgba(26,86,219,0.8)','rgba(26,86,219,1)'],
+        backgroundColor: ['rgba(26,86,219,0.15)','rgba(26,86,219,0.3)','rgba(26,86,219,0.5)','rgba(26,86,219,0.65)','rgba(26,86,219,0.8)','rgba(26,86,219,1)','rgba(8,145,178,0.75)'],
         borderColor: '#1a56db',
         borderWidth: 1,
         borderRadius: 4,
@@ -1312,7 +1318,7 @@ function initAnnualCharts() {
     },
     options: {
       ...chartDefaults,
-      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(2) + ' mlrd BAM' } } },
+      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(2) + ' mlrd BAM' + (ctx.dataIndex===6 ? ' (samo jan–okt 2026)' : '') } } },
       scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v.toFixed(0) + ' mlrd' } } }
     }
   });
@@ -1324,12 +1330,12 @@ function initAnnualCharts() {
   new Chart(document.getElementById('chartAnnualGrowth'), {
     type: 'bar',
     data: {
-      labels: ['2020', '2020→21', '2021→22', '2022→23', '2023→24', '2024→25'],
+      labels: ['2020', '2020→21', '2021→22', '2022→23', '2023→24', '2024→25', '2025→26 (I–X)'],
       datasets: [{
         label: 'YoY rast (%)',
-        data: [null, growths[1], growths[2], growths[3], growths[4], growths[5]],
-        backgroundColor: [null, '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0891b2'].map(c => c ? c+'99' : 'transparent'),
-        borderColor: [null, '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0891b2'],
+        data: [null, growths[1], growths[2], growths[3], growths[4], growths[5], (sum26/sum25-1)*100],
+        backgroundColor: [null, '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0e7490'].map(c => c ? c+'99' : 'transparent'),
+        borderColor: [null, '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0891b2', '#0e7490'],
         borderWidth: 2,
         borderRadius: 4,
       }]
@@ -1379,11 +1385,13 @@ function initAnnualCharts() {
     }
   });
 
-  // ── Top 5 Promet 2025 ─────────────────────────────────────────
-  const top5p = DATA.annual_rows
-    .filter(r => r['2025'] != null)
-    .sort((a,b) => (b['2025']||0) - (a['2025']||0))
-    .slice(0, 5);
+  // ── Top 5 Promet 2026 (I–X) ───────────────────────────────────
+  const GD = YOY_DATA.grad_data;
+  const m26 = ytd26;
+  const m25 = m26.filter(k => k.slice(5) >= '03');
+  const sumG = (g, ks, y) => ks.reduce((a,k)=>a+((GD[g]&&GD[g][y+'-'+k.slice(5)]&&GD[g][y+'-'+k.slice(5)].curr)||0),0);
+  const top5p = Object.keys(GD).map(g => ({grad:g, v: sumG(g, m26, '2026')}))
+    .filter(r => r.v > 0).sort((a,b)=>b.v-a.v).slice(0,5);
 
   const labelShort = name => name
     .replace('NOVI GRAD SARAJEVO','NOVI GRAD SJJ')
@@ -1395,8 +1403,8 @@ function initAnnualCharts() {
     data: {
       labels: top5p.map(r => labelShort(r.grad)),
       datasets: [{
-        label: 'Promet 2025 (M BAM)',
-        data: top5p.map(r => +((r['2025']||0)/1e6).toFixed(1)),
+        label: 'Promet 2026 I–X (M BAM)',
+        data: top5p.map(r => +(r.v/1e6).toFixed(1)),
         backgroundColor: ['#1a56db','#2563eb','#3b82f6','#60a5fa','#93c5fd'],
         borderRadius: 6,
       }]
@@ -1416,22 +1424,23 @@ function initAnnualCharts() {
     }
   });
 
-  // ── Top 5 Rast 2024→2025 ─────────────────────────────────────
-  const top5r = DATA.annual_rows
-    .filter(r => r['g20242025'] != null && r['g20242025'] < 200 && (r['2025']||0) > 50e6)
-    .sort((a,b) => (b['g20242025']||0) - (a['g20242025']||0))
-    .slice(0, 5);
+  // ── Top 5 Rast 2025→2026 (mar–okt, isti period) ────────────────
+  const m26b = m26.filter(k => k.slice(5) >= '03');
+  const top5r = Object.keys(GD).map(g => {
+    const a = sumG(g, m26b, '2025'), c = sumG(g, m26b, '2026');
+    return {grad:g, a:a, g: a>0 ? (c/a-1)*100 : null};
+  }).filter(r => r.g != null && r.g < 200 && r.a > 30e6).sort((x,y)=>y.g-x.g).slice(0,5);
 
   new Chart(document.getElementById('chartTop5Rast'), {
     type: 'bar',
     data: {
       labels: top5r.map(r => labelShort(r.grad)),
       datasets: [{
-        label: 'YoY rast 2024→2025',
-        data: top5r.map(r => +(r['g20242025']||0).toFixed(1)),
+        label: 'Rast 2025→2026',
+        data: top5r.map(r => +r.g.toFixed(1)),
         backgroundColor: top5r.map(r =>
-          r['g20242025'] >= 25 ? '#15803d' :
-          r['g20242025'] >= 15 ? '#16a34a' :
+          r.g >= 25 ? '#15803d' :
+          r.g >= 15 ? '#16a34a' :
           '#22c55e'
         ),
         borderRadius: 6,
@@ -1859,7 +1868,7 @@ function renderGradYoYTable() {
   if (gradYoYPage === 1 && !q) {
     rows += `<tr style="border-bottom:2px solid var(--accent);background:rgba(26,86,219,0.05)">
       <td style="color:var(--accent);font-family:'JetBrains Mono',monospace;text-align:right;padding:6px 10px">Σ</td>
-      <td style="font-family:'Source Serif 4',Georgia,serif;font-weight:700;color:var(--accent);position:sticky;left:0;background:rgba(255,255,255,0.97);z-index:1;padding:6px 14px">FBiH UKUPNO</td>
+      <td style="font-size:13px;font-weight:700;color:var(--accent);position:sticky;left:0;background:rgba(255,255,255,0.97);z-index:1;padding:6px 14px">FBiH UKUPNO</td>
       <td style="text-align:right;font-weight:700;color:${fbihAvg>=0?'var(--pos)':'var(--neg)'};font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px">
         ${fbihAvg>0?'+':''}${fbihAvg.toFixed(1)}%
       </td>
@@ -1875,7 +1884,7 @@ function renderGradYoYTable() {
     const avgCol = avg >= 0 ? 'var(--pos)' : 'var(--neg)';
     rows += `<tr>
       <td class="rank">${start + i + 1}</td>
-      <td data-grad="${g}" data-mode="gradyoy" style="font-family:'Source Serif 4',Georgia,serif;font-weight:600;text-align:left;position:sticky;left:0;background:var(--surface);z-index:1;padding:6px 14px;cursor:pointer">${g}</td>
+      <td data-grad="${g}" data-mode="gradyoy" style="font-size:13px;font-weight:500;text-align:left;position:sticky;left:0;background:var(--surface);z-index:1;padding:6px 14px;cursor:pointer">${g}</td>
       <td style="text-align:right;font-weight:600;color:${avgCol};font-size:12px;font-family:'JetBrains Mono',monospace;padding:6px 10px">
         ${avg > -900 ? (avg > 0 ? '+' : '') + avg.toFixed(1) + '%' : '—'}
       </td>
